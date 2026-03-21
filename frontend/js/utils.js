@@ -204,6 +204,16 @@ const UI = {
     if (e)  e.textContent  = user.email;
     if (av) av.textContent = ((user.first_name||'?')[0] + (user.last_name||'?')[0]).toUpperCase();
   },
+
+  setActiveNav: (path) => {
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+      link.classList.remove('active');
+      const href = link.getAttribute('href');
+      if (href && (href === path || href.endsWith(path))) {
+        link.classList.add('active');
+      }
+    });
+  },
 };
 
 // ---- CLOSE MODALS ON OVERLAY CLICK ----
