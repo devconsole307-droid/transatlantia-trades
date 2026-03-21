@@ -69,7 +69,9 @@ router.post('/register', [
     await query('INSERT INTO user_balances (user_id) VALUES ($1)', [user.id]);
 
     // Send welcome + verification email (don't fail registration if email fails)
-    const verifyLink = `${process.env.SITE_URL}/api/auth/verify-email/${verify_token}`;
+    const backendUrl = (process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || process.env.SITE_URL || 'http://localhost:5000').replace(/\/$/, '');
+    const frontendUrl = (process.env.FRONTEND_URL || process.env.SITE_URL || 'http://localhost:5000').replace(/\/$/, '');
+    const verifyLink = `${backendUrl}/api/auth/verify-email/${verify_token}`;
     const emailSent = await sendEmail(email, 'welcome', { first_name, verify_link: verifyLink });
     if (!emailSent) {
       console.warn(`[EMAIL] Failed to send welcome email to ${email} — check SMTP settings in .env`);
@@ -177,12 +179,15 @@ router.get('/verify-email/:token', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.redirect(`${process.env.SITE_URL}/login.html?error=invalid_token`);
+      const fe = (process.env.FRONTEND_URL || process.env.SITE_URL || 'http://localhost:5000').replace(/\/$/, '');
+      return res.redirect(`${fe}/login.html?error=invalid_token`);
     }
 
-    res.redirect(`${process.env.SITE_URL}/login.html?verified=true`);
+    const feUrl = (process.env.FRONTEND_URL || process.env.SITE_URL || 'http://localhost:5000').replace(/\/$/, '');
+    res.redirect(`${feUrl}/login.html?verified=true`);
   } catch (error) {
-    res.redirect(`${process.env.SITE_URL}/login.html?error=server_error`);
+    const feErr = (process.env.FRONTEND_URL || process.env.SITE_URL || 'http://localhost:5000').replace(/\/$/, '');
+    res.redirect(`${feErr}/login.html?error=server_error`);
   }
 });
 
@@ -206,7 +211,8 @@ router.post('/forgot-password', [body('email').isEmail().normalizeEmail()], asyn
       [resetToken, expires, user.id]
     );
 
-    const resetLink = `${process.env.SITE_URL}/reset-password.html?token=${resetToken}`;
+    const feReset = (process.env.FRONTEND_URL || process.env.SITE_URL || 'http://localhost:5000').replace(/\/$/, '');
+    const resetLink = `${feReset}/reset-password.html?token=${resetToken}`;
     await sendEmail(email, 'password_reset', { first_name: user.first_name, reset_link: resetLink });
 
     res.json({ success: true, message: 'If that email exists, a reset link has been sent.' });
