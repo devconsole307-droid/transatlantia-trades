@@ -1,8 +1,4 @@
-# Render static site redirects
-# Replace YOUR-BACKEND-URL with your actual Render backend URL
-# Example: https://transatlantia-trades-backend.onrender.com
-
 /api/*        https://transatlantia-trades-backend.onrender.com/api/:splat        200
 /socket.io/*  https://transatlantia-trades-backend.onrender.com/socket.io/:splat  200
 /uploads/*    https://transatlantia-trades-backend.onrender.com/uploads/:splat    200
-/*            /index.html   200
+/*            /index.html  200
