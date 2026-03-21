@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Dashboard — TransAtlantia Trades</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    /* Hide Google Translate feedback bar and banner */
+    .goog-te-banner-frame,.goog-te-ftab-frame,#goog-gt-votingFrame,
+    .goog-te-balloon-frame,.goog-tooltip-card,.goog-te-menu-frame { display:none!important; }
+    body { top:0!important; }
+    .goog-te-gadget { color:transparent!important; font-size:0!important; }
+    .goog-te-gadget>span>a { display:none!important; }
+    .goog-te-gadget img { display:none!important; }
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="/img/logo.svg" alt="TransAtlantia" style="width:36px;height:36px;border-radius:8px;flex-shrink:0">
+      <div>
+        <div class="brand-name">TransAtlantia</div>
+        <div class="brand-sub">Trades</div>
+      </div>
+    </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html" class="sidebar-link active"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/deposit.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposit</a>
+      <a href="/investments.html" class="sidebar-link"><span class="nav-icon">📈</span> Investments</a>
+      <a href="/withdraw.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdraw</a>
+      <a href="/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/referrals.html" class="sidebar-link"><span class="nav-icon">👥</span> Referrals</a>
+      <a href="/kyc.html" class="sidebar-link"><span class="nav-icon">🪪</span> KYC</a>
+      <a href="/profile.html" class="sidebar-link"><span class="nav-icon">👤</span> Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sidebarUserAvatar">?</div>
+        <div class="user-info">
+          <div id="sidebarUserName" class="user-name">—</div>
+          <div id="sidebarUserEmail" class="user-role">—</div>
+        </div>
+      </div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title">
+        <h1>Dashboard</h1>
+        <p id="greetingText">Good morning!</p>
+      </div>
+      <div class="topbar-actions">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)">🌐<div id="translateTarget"></div></div>
+        <button id="notifBtn" onclick="toggleNotifications()" style="position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);width:38px;height:38px;cursor:pointer;font-size:16px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+          🔔
+          <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;border:2px solid var(--bg-surface)">0</span>
+        </button>
+        <a href="/deposit.html" class="btn btn-primary btn-sm">+ Deposit</a>
+      </div>
+    </header>
+
+    <!-- NOTIFICATIONS PANEL -->
+    <div id="notifPanel" style="display:none;position:fixed;top:72px;right:20px;width:340px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:500;max-height:420px;overflow:hidden;flex-direction:column">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <strong style="font-size:14px">Notifications</strong>
+        <button onclick="markAllRead()" style="background:none;border:none;color:var(--primary);font-size:12px;cursor:pointer;font-family:var(--font-body)">Mark all read</button>
+      </div>
+      <div id="notifList" style="overflow-y:auto;max-height:360px;padding:8px"></div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- BALANCE STATS -->
+      <div class="stats-grid stagger" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(0,148,255,0.15)">💼</div>
+          <div>
+            <div class="stat-label">Withdrawable Balance</div>
+            <div class="stat-value" id="statWithdrawable">$0.00</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(46,213,115,0.15)">📈</div>
+          <div>
+            <div class="stat-label">Total Earnings</div>
+            <div class="stat-value text-success" id="statEarnings">$0.00</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(255,215,0,0.15)">🏦</div>
+          <div>
+            <div class="stat-label">Active Investment</div>
+            <div class="stat-value text-gold" id="statActive">$0.00</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(0,212,170,0.15)">📤</div>
+          <div>
+            <div class="stat-label">Total Deposited</div>
+            <div class="stat-value" id="statDeposited">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid mt-3">
+
+        <!-- ACTIVE INVESTMENT -->
+        <div class="card" id="activeInvestmentCard">
+          <div class="card-header">
+            <h3>Active Investment</h3>
+            <a href="/deposit.html" class="btn btn-sm btn-outline">+ New</a>
+          </div>
+          <div id="activeInvestmentContent">
+            <div class="empty-state">
+              <div style="font-size:3rem;margin-bottom:12px">📊</div>
+              <p style="color:var(--text-secondary)">No active investment</p>
+              <a href="/deposit.html" class="btn btn-primary btn-sm mt-2">Start Investing</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- RECENT TRANSACTIONS -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Recent Activity</h3>
+          </div>
+          <div id="recentActivity">
+            <div class="empty-state"><p style="color:var(--text-secondary);text-align:center">No recent activity</p></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- DEPOSITS & WITHDRAWALS TABLE -->
+      <div class="card mt-3">
+        <div class="card-header">
+          <h3>Transaction History</h3>
+          <div class="tab-group">
+            <button class="tab-btn active" onclick="switchTab('deposits')">Deposits</button>
+            <button class="tab-btn" onclick="switchTab('withdrawals')">Withdrawals</button>
+          </div>
+        </div>
+        <div id="depositsTab">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Currency</th><th>Status</th></tr></thead>
+              <tbody id="depositsTableBody"><tr><td colspan="5" class="table-empty">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="withdrawalsTab" class="hidden">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Date</th><th>Amount</th><th>Currency</th><th>Wallet</th><th>Status</th></tr></thead>
+              <tbody id="withdrawalsTableBody"><tr><td colspan="5" class="table-empty">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error('Not auth');
+  UI.initSidebar();
+  UI.populateSidebarUser();
+  UI.setActiveNav('/dashboard.html');
+
+  const hour = new Date().getHours();
+  document.getElementById('greetingText').textContent =
+    hour < 12 ? 'Good morning!' : hour < 17 ? 'Good afternoon!' : 'Good evening!';
+
+  async function loadDashboard() {
+    try {
+      const res = await api.get('/user/dashboard');
+      if (!res.success) return;
+      const { balance, active_investments, recent_deposits, recent_withdrawals } = res.dashboard;
+
+      document.getElementById('statWithdrawable').textContent = fmt.money(balance.withdrawable);
+      document.getElementById('statEarnings').textContent = fmt.money(balance.total_earnings);
+      document.getElementById('statActive').textContent = fmt.money(balance.active_investment);
+      document.getElementById('statDeposited').textContent = fmt.money(balance.total_deposited);
+
+      // Active investments
+      const aiContent = document.getElementById('activeInvestmentContent');
+      if (active_investments.length > 0) {
+        aiContent.innerHTML = active_investments.map(inv => {
+          const prog = fmt.progress(inv.started_at, inv.ends_at);
+          const daysLeft = fmt.daysLeft(inv.ends_at);
+          return `<div class="investment-item" style="border:1px solid ${inv.color_hex}33;border-radius:var(--radius-md);padding:16px;margin-bottom:12px;">
+            <div class="flex justify-between items-center mb-2">
+              <strong style="color:${inv.color_hex}">${inv.plan_name} Plan</strong>
+              <span class="badge badge-success">Active</span>
+            </div>
+            <div class="flex justify-between" style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">
+              <span>Invested: <strong style="color:var(--text-white)">${fmt.money(inv.amount)}</strong></span>
+              <span>ROI: <strong style="color:${inv.color_hex}">${inv.roi_percent}%/day</strong></span>
+              <span>Earned: <strong style="color:var(--success)">${fmt.money(inv.total_earned)}</strong></span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${prog}%;background:${inv.color_hex}"></div></div>
+            <div class="flex justify-between mt-1" style="font-size:12px;color:var(--text-muted)">
+              <span>${prog}% complete</span><span>${daysLeft} days left</span>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      // Recent activity combined
+      const allActivity = [
+        ...recent_deposits.map(d => ({...d, _type:'deposit'})),
+        ...recent_withdrawals.map(w => ({...w, _type:'withdrawal'}))
+      ].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,6);
+
+      // Populate notifications
+      allNotifications = res.dashboard.notifications || [];
+      const unread = allNotifications.filter(n => !n.is_read).length;
+      const badge = document.getElementById('notifBadge');
+      if (unread > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = unread > 9 ? '9+' : unread;
+      }
+
+      const activityEl = document.getElementById('recentActivity');
+      if (allActivity.length > 0) {
+        activityEl.innerHTML = allActivity.map(item => `
+          <div class="flex items-center gap-2" style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="width:34px;height:34px;border-radius:50%;background:${item._type==='deposit'?'rgba(46,213,115,0.1)':'rgba(0,148,255,0.1)'};display:flex;align-items:center;justify-content:center;font-size:16px">
+              ${item._type==='deposit'?'⬇️':'⬆️'}
+            </div>
+            <div class="flex-1">
+              <div style="font-size:13px;font-weight:600">${item._type==='deposit'?'Deposit':'Withdrawal'} via ${item.currency}</div>
+              <div style="font-size:11px;color:var(--text-muted)">${fmt.timeAgo(item.created_at)}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:700;color:${item._type==='deposit'?'var(--success)':'var(--primary)'}">${fmt.money(item.amount)}</div>
+              <div>${fmt.badge(item.status)}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Deposits table
+      renderDeposits(recent_deposits);
+      renderWithdrawals(recent_withdrawals);
+
+    } catch(err) {
+      console.error(err);
+      Toast.error('Failed to load dashboard');
+    }
+  }
+
+  function renderDeposits(deposits) {
+    const tbody = document.getElementById('depositsTableBody');
+    if (!deposits.length) { tbody.innerHTML = '<tr><td colspan="5" class="table-empty">No deposits yet</td></tr>'; return; }
+    tbody.innerHTML = deposits.map(d => `
+      <tr>
+        <td>${fmt.date(d.created_at)}</td>
+        <td>${d.plan_name||'—'}</td>
+        <td><strong>${fmt.money(d.amount)}</strong></td>
+        <td>${d.currency}</td>
+        <td>${fmt.badge(d.status)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderWithdrawals(withdrawals) {
+    const tbody = document.getElementById('withdrawalsTableBody');
+    if (!withdrawals.length) { tbody.innerHTML = '<tr><td colspan="5" class="table-empty">No withdrawals yet</td></tr>'; return; }
+    tbody.innerHTML = withdrawals.map(w => `
+      <tr>
+        <td>${fmt.date(w.created_at)}</td>
+        <td><strong>${fmt.money(w.amount)}</strong></td>
+        <td>${w.currency}</td>
+        <td style="font-size:12px;font-family:monospace">${w.wallet_address.slice(0,16)}...</td>
+        <td>${fmt.badge(w.status)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===(tab==='deposits'?0:1)));
+    document.getElementById('depositsTab').classList.toggle('hidden', tab!=='deposits');
+    document.getElementById('withdrawalsTab').classList.toggle('hidden', tab!=='withdrawals');
+  }
+
+  // ---- NOTIFICATIONS ----
+  let notifOpen = false;
+
+  function toggleNotifications() {
+    notifOpen = !notifOpen;
+    const panel = document.getElementById('notifPanel');
+    panel.style.display = notifOpen ? 'flex' : 'none';
+    if (notifOpen) renderNotifications();
+  }
+
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (notifOpen && !e.target.closest('#notifPanel') && !e.target.closest('#notifBtn')) {
+      notifOpen = false;
+      document.getElementById('notifPanel').style.display = 'none';
+    }
+  });
+
+  let allNotifications = [];
+
+  function renderNotifications() {
+    const list = document.getElementById('notifList');
+    if (!allNotifications.length) {
+      list.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-muted);font-size:13px">No notifications</div>';
+      return;
+    }
+    const typeColors = { success:'var(--success)', error:'var(--danger)', warning:'var(--warning)', info:'var(--primary)' };
+    const typeIcons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+    list.innerHTML = allNotifications.map(n => `
+      <div style="padding:12px;border-radius:var(--radius-md);margin-bottom:4px;background:${n.is_read?'transparent':'var(--bg-card-hover)'};border-left:3px solid ${typeColors[n.type]||'var(--border)'}">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:14px;flex-shrink:0">${typeIcons[n.type]||'ℹ️'}</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:var(--text-white);margin-bottom:2px">${n.title}</div>
+            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5">${n.message}</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${fmt.timeAgo(n.created_at)}</div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function markAllRead() {
+    try {
+      await api.post('/user/notifications/read');
+      allNotifications.forEach(n => n.is_read = true);
+      document.getElementById('notifBadge').style.display = 'none';
+      renderNotifications();
+    } catch(e) {}
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

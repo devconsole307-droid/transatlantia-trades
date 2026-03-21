@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Deposit — TransAtlantia Trades</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    /* ---- CRYPTO CARD SELECTOR ---- */
+    .crypto-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .crypto-card {
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      position: relative;
+      background: var(--bg-input);
+      user-select: none;
+    }
+    .crypto-card:hover {
+      border-color: var(--c-color);
+      background: var(--c-bg);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .crypto-card.selected {
+      border-color: var(--c-color);
+      background: var(--c-bg);
+      box-shadow: 0 0 0 3px var(--c-glow);
+    }
+    .crypto-card.selected .crypto-check {
+      display: flex;
+    }
+    .crypto-check {
+      display: none;
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 20px; height: 20px;
+      background: var(--c-color);
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #fff;
+      font-weight: 800;
+    }
+    .crypto-icon { font-size: 2rem; margin-bottom: 8px; line-height: 1; }
+    .crypto-ticker {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--text-white);
+    }
+    .crypto-card.selected .crypto-ticker { color: var(--c-color); }
+    .crypto-network {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .crypto-card.selected .crypto-network { color: var(--c-color); opacity: 0.7; }
+
+    /* ---- WALLET DISPLAY ---- */
+    .wallet-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .wallet-box-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .wallet-box-addr {
+      padding: 12px 14px;
+      font-family: monospace;
+      font-size: 13px;
+      word-break: break-all;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+    .wallet-box-footer {
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ---- ADDRESS INPUT VALIDATION ---- */
+    .addr-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      margin-top: 7px;
+      padding: 7px 12px;
+      border-radius: var(--radius-md);
+      transition: all 0.2s;
+    }
+    .addr-status.idle { background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border); }
+    .addr-status.valid { background: rgba(46,213,115,0.1); color: var(--success); border: 1px solid rgba(46,213,115,0.25); }
+    .addr-status.invalid { background: rgba(255,71,87,0.1); color: var(--danger); border: 1px solid rgba(255,71,87,0.25); }
+    .addr-status.warning { background: rgba(255,165,2,0.1); color: var(--warning); border: 1px solid rgba(255,165,2,0.25); }
+
+    /* ---- STEP LAYOUT ---- */
+    .deposit-step { animation: fadeIn 0.3s ease; }
+    .step-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+    .step-header h2 { font-size: 20px; font-weight: 700; }
+    .step-num {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      font-family: var(--font-display); font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .plan-card {
+      background: var(--bg-card); border: 2px solid var(--border);
+      border-radius: var(--radius-xl); padding: 24px; cursor: pointer;
+      transition: all 0.25s ease; position: relative; overflow: hidden;
+    }
+    .plan-card:hover, .plan-card.selected {
+      border-color: var(--plan-color, var(--primary));
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    }
+    .plan-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; background: var(--plan-color, var(--primary));
+    }
+    .plan-tier-badge {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--plan-color, var(--primary));
+      border: 1px solid var(--plan-color, var(--primary));
+      border-radius: 100px; padding: 3px 10px; margin-bottom: 10px;
+    }
+    .plan-roi { font-family: var(--font-display); font-size: 2.8rem; font-weight: 800; color: var(--plan-color, var(--primary)); line-height: 1; }
+    .plan-roi span { font-size: 1.1rem; }
+    .plan-features { list-style: none; margin: 14px 0 20px; }
+    .plan-features li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); padding: 4px 0; }
+    .plan-features li::before { content: '✓'; color: var(--plan-color, var(--primary)); font-weight: 700; }
+    .plan-range { font-size: 12px; color: var(--text-secondary); padding: 9px 12px; background: var(--bg-input); border-radius: var(--radius-md); text-align: center; margin-bottom: 16px; }
+
+    .deposit-form-grid { max-width: 680px; }
+    .upload-area {
+      border: 2px dashed var(--border); border-radius: var(--radius-md);
+      padding: 28px; text-align: center; cursor: pointer; transition: all 0.2s;
+      color: var(--text-secondary);
+    }
+    .upload-area:hover { border-color: var(--primary); background: var(--primary-glow); }
+    .upload-area.has-file { border-color: var(--success); background: rgba(46,213,115,0.06); }
+
+    @media (max-width: 768px) {
+      .plans-grid, .crypto-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .crypto-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+  <style>
+    /* Hide Google Translate feedback bar and banner */
+    .goog-te-banner-frame,.goog-te-ftab-frame,#goog-gt-votingFrame,
+    .goog-te-balloon-frame,.goog-tooltip-card,.goog-te-menu-frame { display:none!important; }
+    body { top:0!important; }
+    .goog-te-gadget { color:transparent!important; font-size:0!important; }
+    .goog-te-gadget>span>a { display:none!important; }
+    .goog-te-gadget img { display:none!important; }
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="/img/logo.svg" alt="TransAtlantia" style="width:36px;height:36px;border-radius:8px;flex-shrink:0">
+      <div>
+        <div class="brand-name">TransAtlantia</div>
+        <div class="brand-sub">Trades</div>
+      </div>
+    </div></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/deposit.html" class="sidebar-link active"><span class="nav-icon">💰</span> Deposit</a>
+      <a href="/investments.html" class="sidebar-link"><span class="nav-icon">📈</span> Investments</a>
+      <a href="/withdraw.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdraw</a>
+      <a href="/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/referrals.html" class="sidebar-link"><span class="nav-icon">👥</span> Referrals</a>
+      <a href="/kyc.html" class="sidebar-link"><span class="nav-icon">🪪</span> KYC</a>
+      <a href="/profile.html" class="sidebar-link"><span class="nav-icon">👤</span> Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" id="sidebarUserAvatar">?</div><div class="user-info"><div id="sidebarUserName" class="user-name">—</div><div id="sidebarUserEmail" class="user-role">—</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>Make a Deposit</h1><p>Choose a plan and fund your account</p></div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- STEP 1: Choose Plan -->
+      <div class="deposit-step" id="step1">
+        <div class="step-header">
+          <div class="step-num">1</div>
+          <div><h2>Select Investment Plan</h2><p class="text-muted">Choose the plan that matches your investment goals</p></div>
+        </div>
+        <div class="plans-grid stagger" id="plansGrid">
+          <div class="skeleton" style="height:300px;border-radius:var(--radius-xl)"></div>
+          <div class="skeleton" style="height:300px;border-radius:var(--radius-xl)"></div>
+          <div class="skeleton" style="height:300px;border-radius:var(--radius-xl)"></div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Payment -->
+      <div class="deposit-step hidden" id="step2">
+        <div class="step-header">
+          <button onclick="goStep(1)" class="btn btn-ghost btn-sm">← Back</button>
+          <div class="step-num">2</div>
+          <div><h2>Payment Details</h2><p class="text-muted">Select crypto, verify the address, upload proof</p></div>
+        </div>
+
+        <div class="deposit-form-grid">
+          <div class="card">
+
+            <!-- Selected plan summary -->
+            <div id="selectedPlanSummary"></div>
+
+            <!-- Amount input -->
+            <div class="form-group mt-3">
+              <label class="form-label">Deposit Amount (USD)</label>
+              <div class="input-group">
+                <span class="input-icon">$</span>
+                <input type="number" class="form-control" id="depositAmount" placeholder="0.00" min="0" step="0.01" oninput="validateAmount(this.value)">
+              </div>
+              <p class="form-hint" id="amountHint" style="margin-top:7px">—</p>
+            </div>
+
+            <!-- Crypto selector -->
+            <div class="form-group">
+              <label class="form-label">Select Cryptocurrency</label>
+              <div class="crypto-grid" id="cryptoGrid">
+                <div class="crypto-card selected"
+                  style="--c-color:#F7931A;--c-bg:rgba(247,147,26,0.08);--c-glow:rgba(247,147,26,0.2)"
+                  data-currency="BTC" onclick="selectCrypto(this)">
+                  <span class="crypto-check">✓</span>
+                  <div class="crypto-icon">₿</div>
+                  <div class="crypto-ticker">BTC</div>
+                  <div class="crypto-network">Bitcoin</div>
+                </div>
+                <div class="crypto-card"
+                  style="--c-color:#627EEA;--c-bg:rgba(98,126,234,0.08);--c-glow:rgba(98,126,234,0.2)"
+                  data-currency="ETH" onclick="selectCrypto(this)">
+                  <span class="crypto-check">✓</span>
+                  <div class="crypto-icon">Ξ</div>
+                  <div class="crypto-ticker">ETH</div>
+                  <div class="crypto-network">Ethereum ERC20</div>
+                </div>
+                <div class="crypto-card"
+                  style="--c-color:#26A17B;--c-bg:rgba(38,161,123,0.08);--c-glow:rgba(38,161,123,0.2)"
+                  data-currency="USDT_TRC20" onclick="selectCrypto(this)">
+                  <span class="crypto-check">✓</span>
+                  <div class="crypto-icon">₮</div>
+                  <div class="crypto-ticker">USDT</div>
+                  <div class="crypto-network">Tron TRC20</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Wallet address to send TO -->
+            <div class="form-group">
+              <label class="form-label">Send Payment To This Address</label>
+              <div class="wallet-box" id="walletBox">
+                <div class="wallet-box-header" id="walletBoxHeader">
+                  <span id="walletNetworkIcon">₿</span>
+                  <span id="walletNetworkLabel">Bitcoin (BTC) Address</span>
+                </div>
+                <div class="wallet-box-addr" id="walletAddress">Loading...</div>
+                <div class="wallet-box-footer">
+                  <button class="btn btn-outline btn-sm" onclick="copyWallet()">📋 Copy Address</button>
+                  <span style="font-size:11px;color:var(--text-muted);align-self:center">Only send the exact amount shown above</span>
+                </div>
+              </div>
+              <p class="form-hint" style="margin-top:8px">
+                ⚠️ Only send <strong id="networkWarning">BTC</strong> to this address. Sending the wrong coin results in permanent loss.
+              </p>
+            </div>
+
+            <!-- TXID -->
+            <div class="form-group">
+              <label class="form-label">Transaction ID / Hash <span style="opacity:0.5;font-weight:400">(optional but recommended)</span></label>
+              <input type="text" class="form-control" id="txidInput" placeholder="Paste your transaction hash here">
+              <p class="form-hint">Find this in your wallet's transaction history after sending.</p>
+            </div>
+
+            <!-- Proof upload -->
+            <div class="form-group">
+              <label class="form-label">Payment Proof Screenshot <span style="color:var(--danger)">*</span></label>
+              <div class="upload-area" id="uploadArea" onclick="document.getElementById('proofFile').click()">
+                <input type="file" id="proofFile" accept="image/*,.pdf" style="display:none" onchange="handleFileSelect(this)">
+                <div id="uploadPlaceholder">
+                  <div style="font-size:2.5rem;margin-bottom:8px">📎</div>
+                  <p style="font-weight:600;margin-bottom:4px">Click to upload screenshot</p>
+                  <p style="font-size:12px;color:var(--text-muted)">JPG, PNG, PDF — max 10MB</p>
+                </div>
+              </div>
+            </div>
+
+            <div id="depositAlertBox"></div>
+            <button class="btn btn-primary btn-block btn-lg" id="submitDepositBtn" onclick="submitDeposit()">
+              ✅ Submit Deposit
+            </button>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Success -->
+      <div class="deposit-step hidden" id="step3">
+        <div class="card" style="max-width:500px;margin:60px auto;text-align:center;padding:48px 32px">
+          <div style="font-size:4rem;margin-bottom:16px">🎉</div>
+          <h2>Deposit Submitted!</h2>
+          <p class="text-muted mt-2">Your deposit is under review. We'll confirm it within 24 hours and notify you by email.</p>
+          <div class="flex gap-2 mt-4" style="justify-content:center">
+            <a href="/dashboard.html" class="btn btn-primary">Go to Dashboard</a>
+            <button onclick="resetDeposit()" class="btn btn-outline">Make Another</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error();
+  UI.initSidebar();
+  UI.populateSidebarUser();
+
+  // ---- CRYPTO CONFIG ----
+  const CRYPTOS = {
+    BTC: {
+      label: 'Bitcoin (BTC)',
+      network: 'Bitcoin Network',
+      icon: '₿',
+      walletKey: 'btc_wallet',
+      placeholder: 'e.g. bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+      // BTC: starts with 1, 3, or bc1 — length 25-62
+      validate: (addr) => /^(1|3|bc1)[A-Za-z0-9]{24,61}$/.test(addr),
+      hint: 'Must start with 1, 3, or bc1 (26–62 characters)',
+      warn: 'BTC only on Bitcoin Network — do not send ERC20 tokens here',
+    },
+    ETH: {
+      label: 'Ethereum (ETH)',
+      network: 'Ethereum ERC20',
+      icon: 'Ξ',
+      walletKey: 'eth_wallet',
+      placeholder: 'e.g. 0x742d35Cc6634C0532925a3b8D4C9E72EF89AbcD',
+      // ETH: starts with 0x, exactly 42 chars
+      validate: (addr) => /^0x[0-9a-fA-F]{40}$/.test(addr),
+      hint: 'Must start with 0x followed by 40 hex characters (42 total)',
+      warn: 'ETH only on Ethereum Network — do not send BEP20 or TRC20 tokens here',
+    },
+    USDT_TRC20: {
+      label: 'USDT TRC20',
+      network: 'Tron TRC20',
+      icon: '₮',
+      walletKey: 'usdt_trc20_wallet',
+      placeholder: 'e.g. TRx7NTFhTzLSQZu6BhPguYNgE8yK6bnDaA',
+      // TRC20: starts with T, length 34
+      validate: (addr) => /^T[A-Za-z0-9]{33}$/.test(addr),
+      hint: 'Must start with T and be exactly 34 characters long',
+      warn: 'USDT TRC20 only — sending ERC20 USDT here will result in loss of funds',
+    },
+  };
+
+  let plans = [], selectedPlan = null, selectedCurrency = 'BTC', wallets = {};
+
+  // ---- LOAD PLANS + WALLETS ----
+  async function loadPlans() {
+    try {
+      const [plansRes, walletsRes] = await Promise.all([
+        api.get('/plans'),
+        api.get('/deposits/wallets/all')
+      ]);
+      plans = plansRes.plans || [];
+      wallets = walletsRes.wallets || {};
+
+      document.getElementById('plansGrid').innerHTML = plans.map(p => `
+        <div class="plan-card" style="--plan-color:${p.color_hex}" onclick="selectPlan('${p.id}')">
+          <div class="plan-tier-badge">${p.name}</div>
+          <div class="plan-roi" style="color:${p.color_hex}">${p.roi_percent}<span>%/day</span></div>
+          <div style="font-size:12px;color:var(--text-secondary);margin:4px 0 16px">${p.duration_days}-day duration</div>
+          <ul class="plan-features">
+            ${(p.features||[]).map(f=>`<li>${f}</li>`).join('')}
+          </ul>
+          <div class="plan-range">
+            Min: <strong>$${parseFloat(p.min_amount).toLocaleString()}</strong>
+            &nbsp;—&nbsp;
+            Max: <strong>$${parseFloat(p.max_amount).toLocaleString()}</strong>
+          </div>
+          <button class="btn btn-primary btn-block" style="border:1px solid ${p.color_hex};color:${p.color_hex};background:${p.color_hex}18" onmouseover="this.style.background='${p.color_hex}';this.style.color='#fff'" onmouseout="this.style.background='${p.color_hex}18';this.style.color='${p.color_hex}'">
+            Select This Plan
+          </button>
+        </div>
+      `).join('');
+    } catch(e) {
+      Toast.error('Failed to load plans');
+    }
+  }
+
+  // ---- SELECT PLAN ----
+  function selectPlan(id) {
+    selectedPlan = plans.find(p => p.id === id);
+    if (!selectedPlan) return;
+
+    document.getElementById('selectedPlanSummary').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;background:${selectedPlan.color_hex}12;border:1px solid ${selectedPlan.color_hex}44;border-radius:var(--radius-md);padding:14px 16px">
+        <div>
+          <div style="font-family:var(--font-display);font-weight:700;color:${selectedPlan.color_hex}">${selectedPlan.name} Plan</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${selectedPlan.duration_days} days · ${selectedPlan.roi_percent}% daily ROI</div>
+        </div>
+        <button onclick="goStep(1)" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px">Change plan</button>
+      </div>
+    `;
+
+    const min = parseFloat(selectedPlan.min_amount);
+    const max = parseFloat(selectedPlan.max_amount);
+    document.getElementById('amountHint').textContent = `Min: $${min.toLocaleString()} — Max: $${max.toLocaleString()}`;
+    document.getElementById('amountHint').style.color = '';
+    document.getElementById('depositAmount').min = min;
+    document.getElementById('depositAmount').max = max;
+    document.getElementById('depositAmount').value = '';
+
+    updateWalletDisplay();
+    goStep(2);
+  }
+
+  // ---- SELECT CRYPTO ----
+  function selectCrypto(el) {
+    document.querySelectorAll('.crypto-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedCurrency = el.dataset.currency;
+    updateWalletDisplay();
+
+    // Clear address field and re-validate
+    const addrInput = document.getElementById('depositAmount');
+    validateAmount(addrInput.value);
+  }
+
+  // ---- UPDATE WALLET DISPLAY ----
+  function updateWalletDisplay() {
+    const cfg = CRYPTOS[selectedCurrency];
+    if (!cfg) return;
+
+    const keyMap = { BTC:'btc_wallet', ETH:'eth_wallet', USDT_TRC20:'usdt_trc20_wallet' };
+    const addr = wallets[keyMap[selectedCurrency]] || 'Address not configured — contact support';
+
+    document.getElementById('walletAddress').textContent = addr;
+    document.getElementById('walletBoxHeader').innerHTML = `
+      <span style="font-size:16px">${cfg.icon}</span>
+      <span style="color:var(--text-secondary)">${cfg.label} Deposit Address</span>
+      <span style="margin-left:auto;font-size:10px;padding:2px 8px;border-radius:100px;background:rgba(0,148,255,0.1);color:var(--primary)">${cfg.network}</span>
+    `;
+    document.getElementById('networkWarning').textContent = selectedCurrency === 'USDT_TRC20' ? 'USDT (TRC20)' : selectedCurrency;
+  }
+
+  function copyWallet() {
+    const addr = document.getElementById('walletAddress').textContent;
+    UI.copyText(addr);
+    Toast.success('Address copied!', 2000);
+  }
+
+  // ---- AMOUNT VALIDATION ----
+  function validateAmount(val) {
+    if (!selectedPlan) return;
+    const hint = document.getElementById('amountHint');
+    const min = parseFloat(selectedPlan.min_amount);
+    const max = parseFloat(selectedPlan.max_amount);
+    const num = parseFloat(val);
+
+    if (!val || isNaN(num)) {
+      hint.style.color = '';
+      hint.textContent = `Min: $${min.toLocaleString()} — Max: $${max.toLocaleString()}`;
+    } else if (num < min) {
+      hint.style.color = 'var(--danger)';
+      hint.textContent = `⚠ Too low — minimum for ${selectedPlan.name} is $${min.toLocaleString()}`;
+    } else if (num > max) {
+      hint.style.color = 'var(--danger)';
+      hint.textContent = `⚠ Too high — maximum for ${selectedPlan.name} is $${max.toLocaleString()}`;
+    } else {
+      hint.style.color = 'var(--success)';
+      hint.textContent = `✓ Valid amount for the ${selectedPlan.name} plan`;
+    }
+  }
+
+  // ---- FILE UPLOAD ----
+  function handleFileSelect(input) {
+    const file = input.files[0];
+    const area = document.getElementById('uploadArea');
+    if (file) {
+      area.classList.add('has-file');
+      document.getElementById('uploadPlaceholder').innerHTML = `
+        <div style="font-size:2rem;margin-bottom:8px">✅</div>
+        <p style="font-weight:600;color:var(--success);margin-bottom:4px">${file.name}</p>
+        <p style="font-size:12px;color:var(--text-muted)">${(file.size/1024/1024).toFixed(2)} MB — Click to replace</p>
+      `;
+    }
+  }
+
+  // ---- SUBMIT ----
+  async function submitDeposit() {
+    const btn = document.getElementById('submitDepositBtn');
+    const alertBox = document.getElementById('depositAlertBox');
+    alertBox.innerHTML = '';
+
+    const amount = document.getElementById('depositAmount').value;
+    const txid = document.getElementById('txidInput').value.trim();
+    const file = document.getElementById('proofFile').files[0];
+
+    // Validate amount
+    if (!amount || parseFloat(amount) <= 0) {
+      UI.showAlert(alertBox, 'Please enter a deposit amount', 'error');
+      return;
+    }
+    const num = parseFloat(amount);
+    const min = parseFloat(selectedPlan.min_amount);
+    const max = parseFloat(selectedPlan.max_amount);
+    if (num < min) {
+      UI.showAlert(alertBox, `Minimum deposit for the ${selectedPlan.name} plan is $${min.toLocaleString()}`, 'error');
+      return;
+    }
+    if (num > max) {
+      UI.showAlert(alertBox, `Maximum deposit for the ${selectedPlan.name} plan is $${max.toLocaleString()}`, 'error');
+      return;
+    }
+
+    // Validate proof
+    if (!file) {
+      UI.showAlert(alertBox, 'Please upload a payment proof screenshot', 'error');
+      return;
+    }
+
+    UI.setLoading(btn, true, 'Submitting...');
+    try {
+      const formData = new FormData();
+      formData.append('amount', amount);
+      formData.append('currency', selectedCurrency);
+      formData.append('plan_id', selectedPlan.id);
+      if (txid) formData.append('txid', txid);
+      formData.append('proof', file);
+
+      const res = await api.post('/deposits', formData, true);
+      if (res.success) {
+        goStep(3);
+      } else {
+        UI.showAlert(alertBox, res.message || 'Submission failed', 'error');
+        UI.setLoading(btn, false);
+      }
+    } catch(e) {
+      UI.showAlert(alertBox, 'Connection error. Please try again.', 'error');
+      UI.setLoading(btn, false);
+    }
+  }
+
+  function goStep(n) {
+    document.querySelectorAll('.deposit-step').forEach((s, i) => {
+      s.classList.toggle('hidden', i + 1 !== n);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetDeposit() {
+    selectedPlan = null;
+    document.getElementById('depositAmount').value = '';
+    document.getElementById('txidInput').value = '';
+    document.getElementById('proofFile').value = '';
+    document.getElementById('uploadArea').classList.remove('has-file');
+    document.getElementById('uploadPlaceholder').innerHTML = `
+      <div style="font-size:2.5rem;margin-bottom:8px">📎</div>
+      <p style="font-weight:600;margin-bottom:4px">Click to upload screenshot</p>
+      <p style="font-size:12px;color:var(--text-muted)">JPG, PNG, PDF — max 10MB</p>
+    `;
+    goStep(1);
+  }
+
+  loadPlans();
+</script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Settings — Admin</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand" style="border-bottom:2px solid var(--danger)">
+      <div class="brand-logo" style="background:linear-gradient(135deg,var(--danger),#cc0000)">🛡</div>
+      <div><div class="brand-name">Admin Panel</div><div class="brand-sub">TransAtlantia Trades</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/admin/users.html" class="sidebar-link"><span class="nav-icon">👥</span> Users</a>
+      <a href="/admin/deposits.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposits</a>
+      <a href="/admin/withdrawals.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdrawals</a>
+      <a href="/admin/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/admin/plans.html" class="sidebar-link"><span class="nav-icon">📊</span> Plans</a>
+      <a href="/admin/chat.html" class="sidebar-link"><span class="nav-icon">💬</span> Live Chat</a>
+      <a href="/admin/settings.html" class="sidebar-link active"><span class="nav-icon">⚙️</span> Settings</a>
+      <a href="/admin/email-templates.html" class="sidebar-link"><span class="nav-icon">📧</span> Email Templates</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" style="background:var(--danger)">A</div><div class="user-info"><div class="user-name">Admin</div><div class="user-role" style="color:var(--danger)">Administrator</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>Platform Settings</h1><p>Wallets, fees, and site configuration</p></div>
+    </header>
+
+    <div class="page-content" id="settingsContent">
+      <div class="skeleton" style="height:400px;border-radius:var(--radius-xl)"></div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script>
+  if (!Auth.requireAdmin()) throw new Error();
+  UI.initSidebar();
+  let currentSettings = {};
+
+  async function loadSettings() {
+    try {
+      const res = await api.get('/admin/settings');
+      currentSettings = res.settings || {};
+      renderSettings();
+    } catch(e) { Toast.error('Failed to load settings'); }
+  }
+
+  function field(key, label, type='text', hint='') {
+    const val = currentSettings[key] || '';
+    return `
+      <div class="form-group">
+        <label class="form-label">${label}</label>
+        ${type==='select'?`
+          <select class="form-control settings-field" data-key="${key}">
+            <option value="false" ${val==='false'?'selected':''}>Off — Site is live</option>
+            <option value="true" ${val==='true'?'selected':''}>On — Maintenance mode</option>
+          </select>
+        `:`<input type="${type}" class="form-control settings-field" data-key="${key}" value="${val}" placeholder="${hint||label}">`}
+        ${hint?`<p class="form-hint">${hint}</p>`:''}
+      </div>
+    `;
+  }
+
+  function renderSettings() {
+    document.getElementById('settingsContent').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <div>
+          <div class="card mb-3">
+            <div class="card-header"><h3>🌐 Site Configuration</h3></div>
+            ${field('site_name','Site Name','text','Platform display name')}
+            ${field('site_tagline','Tagline','text','Hero section tagline')}
+            ${field('support_email','Support Email','email')}
+            ${field('support_phone','Support Phone','text')}
+            ${field('maintenance_mode','Maintenance Mode','select')}
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>💵 Fees & Limits</h3></div>
+            ${field('referral_percent','Referral Bonus (%)','number','% of first deposit credited to referrer')}
+            ${field('min_withdrawal','Min Withdrawal ($)','number')}
+            ${field('max_withdrawal','Max Withdrawal ($)','number')}
+            ${field('withdrawal_fee','Withdrawal Fee (%)','number')}
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><h3>₿ Deposit Wallet Addresses</h3></div>
+            <div class="alert alert-warning mb-3">⚠️ Ensure these are your correct wallet addresses. Users will send funds here.</div>
+            ${field('btc_wallet','Bitcoin (BTC) Wallet','text','bc1q...')}
+            ${field('eth_wallet','Ethereum (ETH) Wallet','text','0x...')}
+            ${field('usdt_trc20_wallet','USDT TRC20 Wallet','text','T...')}
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end mt-3">
+        <button class="btn btn-primary btn-lg" id="saveSettingsBtn" onclick="saveSettings()">💾 Save All Settings</button>
+      </div>
+    `;
+  }
+
+  async function saveSettings() {
+    const btn = document.getElementById('saveSettingsBtn');
+    const updates = {};
+    document.querySelectorAll('.settings-field').forEach(el => {
+      updates[el.dataset.key] = el.value;
+    });
+    UI.setLoading(btn, true, 'Saving...');
+    try {
+      const res = await api.put('/admin/settings', updates);
+      if (res.success) Toast.success('Settings saved!');
+      else Toast.error(res.message||'Failed');
+    } catch(e) { Toast.error('Error saving'); }
+    UI.setLoading(btn, false);
+  }
+
+  loadSettings();
+</script>
+
+<script>
+// Poll for unread chat messages and update badge
+async function updateChatBadge() {
+  try {
+    const res = await api.get('/chat/admin/unread');
+    const badge = document.getElementById('chatNavBadge');
+    if (badge) {
+      if (res.count > 0) { badge.style.display = 'inline-flex'; badge.textContent = res.count > 9 ? '9+' : res.count; }
+      else badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // Add badge span to chat link if not present
+  const chatLink = document.querySelector('a[href="/admin/chat.html"]');
+  if (chatLink && !chatLink.querySelector('#chatNavBadge')) {
+    const badge = document.createElement('span');
+    badge.id = 'chatNavBadge';
+    badge.style.cssText = 'display:none;background:#FF4757;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:100px;margin-left:auto;min-width:18px;text-align:center';
+    chatLink.appendChild(badge);
+  }
+  if (Auth.isAdmin()) { updateChatBadge(); setInterval(updateChatBadge, 20000); }
+});
+</script>
+</body>
+</html>

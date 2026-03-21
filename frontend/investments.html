@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>My Investments — TransAtlantia Trades</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .inv-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;transition:all .2s;border-left:4px solid var(--plan-color,var(--primary))}
+    .inv-card:hover{border-color:var(--plan-color,var(--primary));box-shadow:0 4px 20px rgba(0,0,0,.3)}
+    .inv-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+    .inv-plan{font-family:var(--font-display);font-weight:800;font-size:1rem}
+    .inv-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+    .inv-stat{background:var(--bg-input);border-radius:var(--radius-md);padding:12px;text-align:center}
+    .inv-stat-val{font-family:var(--font-display);font-weight:700;font-size:1.05rem}
+    .inv-stat-lbl{font-size:11px;color:var(--text-muted);margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
+    .filter-pills{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+    .filter-pill{padding:6px 16px;border-radius:100px;font-size:13px;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;transition:all .15s}
+    .filter-pill.active,.filter-pill:hover{background:var(--primary-glow);border-color:var(--primary);color:var(--primary)}
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="/img/logo.svg" alt="TransAtlantia" style="width:36px;height:36px;border-radius:8px;flex-shrink:0">
+      <div>
+        <div class="brand-name">TransAtlantia</div>
+        <div class="brand-sub">Trades</div>
+      </div>
+    </div></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/deposit.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposit</a>
+      <a href="/investments.html" class="sidebar-link active"><span class="nav-icon">📈</span> Investments</a>
+      <a href="/withdraw.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdraw</a>
+      <a href="/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/referrals.html" class="sidebar-link"><span class="nav-icon">👥</span> Referrals</a>
+      <a href="/kyc.html" class="sidebar-link"><span class="nav-icon">🪪</span> KYC</a>
+      <a href="/profile.html" class="sidebar-link"><span class="nav-icon">👤</span> Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" id="sidebarUserAvatar">?</div><div class="user-info"><div id="sidebarUserName" class="user-name">—</div><div id="sidebarUserEmail" class="user-role">—</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>My Investments</h1><p>Track all your active and completed plans</p></div>
+      <div class="topbar-actions"><a href="/deposit.html" class="btn btn-primary btn-sm">+ New Investment</a></div>
+    </header>
+    <div class="page-content">
+
+      <!-- SUMMARY STATS -->
+      <div class="stats-grid stagger mb-3">
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(46,213,115,.15)">📈</div><div><div class="stat-label">Active Plans</div><div class="stat-value text-success" id="sumActive">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(0,148,255,.15)">💼</div><div><div class="stat-label">Total Invested</div><div class="stat-value" id="sumInvested">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(255,215,0,.15)">🏆</div><div><div class="stat-label">Total Earned</div><div class="stat-value text-gold" id="sumEarned">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(0,212,170,.15)">✅</div><div><div class="stat-label">Completed Plans</div><div class="stat-value text-accent" id="sumCompleted">—</div></div></div>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filter-pills">
+        <button class="filter-pill active" onclick="filterInvs('all',this)">All</button>
+        <button class="filter-pill" onclick="filterInvs('active',this)">Active</button>
+        <button class="filter-pill" onclick="filterInvs('completed',this)">Completed</button>
+        <button class="filter-pill" onclick="filterInvs('cancelled',this)">Cancelled</button>
+      </div>
+
+      <!-- INVESTMENTS LIST -->
+      <div id="investmentsContainer">
+        <div style="text-align:center;padding:60px 0"><div class="spinner" style="margin:0 auto 16px"></div><p style="color:var(--text-muted)">Loading investments...</p></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<script src="/js/utils.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error();
+  UI.initSidebar();
+  UI.populateSidebarUser();
+
+  let allInvestments = [];
+
+  async function loadInvestments() {
+    try {
+      const res = await api.get('/user/investments');
+      if (!res.success) return;
+      allInvestments = res.investments || [];
+
+      // Summary stats
+      const active = allInvestments.filter(i => i.status === 'active');
+      const completed = allInvestments.filter(i => i.status === 'completed');
+      const totalInvested = allInvestments.reduce((s,i) => s + parseFloat(i.amount), 0);
+      const totalEarned = allInvestments.reduce((s,i) => s + parseFloat(i.total_earned||0), 0);
+
+      document.getElementById('sumActive').textContent = active.length;
+      document.getElementById('sumInvested').textContent = fmt.money(totalInvested);
+      document.getElementById('sumEarned').textContent = fmt.money(totalEarned);
+      document.getElementById('sumCompleted').textContent = completed.length;
+
+      renderInvestments(allInvestments);
+    } catch(e) {
+      document.getElementById('investmentsContainer').innerHTML = '<div class="alert alert-danger">Failed to load investments. Please refresh.</div>';
+    }
+  }
+
+  function filterInvs(status, btn) {
+    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filtered = status === 'all' ? allInvestments : allInvestments.filter(i => i.status === status);
+    renderInvestments(filtered);
+  }
+
+  function renderInvestments(list) {
+    const container = document.getElementById('investmentsContainer');
+    if (!list.length) {
+      container.innerHTML = `<div style="text-align:center;padding:60px 0">
+        <div style="font-size:3rem;margin-bottom:16px">📊</div>
+        <h3 style="margin-bottom:8px">No investments found</h3>
+        <p style="color:var(--text-secondary);margin-bottom:24px">Start your first investment plan to see it here.</p>
+        <a href="/deposit.html" class="btn btn-primary">Make Your First Deposit →</a>
+      </div>`;
+      return;
+    }
+
+    container.innerHTML = list.map(inv => {
+      const prog = fmt.progress(inv.started_at, inv.ends_at);
+      const daysLeft = fmt.daysLeft(inv.ends_at);
+      const earnedPct = parseFloat(inv.total_expected_profit) > 0
+        ? ((parseFloat(inv.total_earned||0) / parseFloat(inv.total_expected_profit)) * 100).toFixed(1)
+        : 0;
+      const statusColors = { active: 'var(--success)', completed: 'var(--primary)', cancelled: 'var(--danger)' };
+      const statusBg = { active: 'rgba(46,213,115,.1)', completed: 'rgba(0,148,255,.1)', cancelled: 'rgba(255,71,87,.1)' };
+
+      return `<div class="inv-card mb-3" style="--plan-color:${inv.color_hex||'#0094FF'}">
+        <div class="inv-header">
+          <div>
+            <div class="inv-plan" style="color:${inv.color_hex||'var(--primary)'}">
+              ${inv.plan_name} Plan
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px">
+              Started ${fmt.date(inv.started_at)} · Ends ${fmt.date(inv.ends_at)}
+            </div>
+          </div>
+          <span style="padding:5px 12px;border-radius:100px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:${statusBg[inv.status]};color:${statusColors[inv.status]}">
+            ${inv.status}
+          </span>
+        </div>
+
+        <div class="inv-meta">
+          <div class="inv-stat">
+            <div class="inv-stat-val">${fmt.money(inv.amount)}</div>
+            <div class="inv-stat-lbl">Invested</div>
+          </div>
+          <div class="inv-stat">
+            <div class="inv-stat-val" style="color:${inv.color_hex||'var(--primary)'}">${inv.roi_percent}%</div>
+            <div class="inv-stat-lbl">Daily ROI</div>
+          </div>
+          <div class="inv-stat">
+            <div class="inv-stat-val" style="color:var(--success)">${fmt.money(inv.total_earned||0)}</div>
+            <div class="inv-stat-lbl">Earned So Far</div>
+          </div>
+          <div class="inv-stat">
+            <div class="inv-stat-val">${fmt.money(inv.total_expected_profit)}</div>
+            <div class="inv-stat-lbl">Total Expected</div>
+          </div>
+        </div>
+
+        ${inv.status === 'active' ? `
+        <div style="margin-top:4px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px">
+            <span>Progress: ${prog}% · ${daysLeft} days left</span>
+            <span>Profit: ${earnedPct}% of target</span>
+          </div>
+          <div class="progress-bar" style="height:8px">
+            <div class="progress-fill" style="width:${prog}%;background:${inv.color_hex||'var(--primary)'}"></div>
+          </div>
+        </div>` : `
+        <div style="font-size:12px;color:var(--text-muted);margin-top:8px">
+          ${inv.status === 'completed' ? `✅ Completed ${fmt.date(inv.ends_at)} · Principal returned to balance` : `❌ Cancelled`}
+        </div>`}
+      </div>`;
+    }).join('');
+  }
+
+  loadInvestments();
+</script>
+</body>
+</html>

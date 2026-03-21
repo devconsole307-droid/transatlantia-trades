@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Profile — TransAtlantia Trades</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="/img/logo.svg" alt="TransAtlantia" style="width:36px;height:36px;border-radius:8px;flex-shrink:0">
+      <div>
+        <div class="brand-name">TransAtlantia</div>
+        <div class="brand-sub">Trades</div>
+      </div>
+    </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/deposit.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposit</a>
+      <a href="/investments.html" class="sidebar-link"><span class="nav-icon">📈</span> Investments</a>
+      <a href="/withdraw.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdraw</a>
+      <a href="/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/referrals.html" class="sidebar-link"><span class="nav-icon">👥</span> Referrals</a>
+      <a href="/kyc.html" class="sidebar-link"><span class="nav-icon">🪪</span> KYC</a>
+      <a href="/profile.html" class="sidebar-link active"><span class="nav-icon">👤</span> Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sidebarUserAvatar">?</div>
+        <div class="user-info"><div id="sidebarUserName" class="user-name">—</div><div id="sidebarUserEmail" class="user-role">—</div></div>
+      </div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>My Profile</h1><p>Manage your account settings</p></div>
+    </header>
+
+    <div class="page-content">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px">
+
+        <!-- PERSONAL DETAILS -->
+        <div class="card">
+          <div class="card-header"><h3>👤 Personal Details</h3></div>
+          <div id="profileAlertBox"></div>
+          <form id="profileForm">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="form-group">
+                <label class="form-label">First Name</label>
+                <input type="text" class="form-control" id="firstName" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="lastName" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" class="form-control" id="email" disabled style="opacity:0.6;cursor:not-allowed">
+              <p class="form-hint">Email cannot be changed</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input type="tel" class="form-control" id="phone" placeholder="+1 234 567 8900">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Country</label>
+              <input type="text" class="form-control" id="country" placeholder="United States">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="saveProfileBtn">💾 Save Changes</button>
+          </form>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <!-- CHANGE PASSWORD -->
+          <div class="card">
+            <div class="card-header"><h3>🔒 Change Password</h3></div>
+            <div id="passwordAlertBox"></div>
+            <form id="passwordForm">
+              <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input type="password" class="form-control" id="currentPassword" placeholder="••••••••" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" class="form-control" id="newPassword" placeholder="Min 8 characters" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Confirm New Password</label>
+                <input type="password" class="form-control" id="confirmPassword" placeholder="Repeat new password" required>
+              </div>
+              <button type="submit" class="btn btn-outline btn-block" id="changePasswordBtn">🔑 Update Password</button>
+            </form>
+          </div>
+
+          <!-- ACCOUNT INFO -->
+          <div class="card">
+            <div class="card-header"><h3>ℹ️ Account Info</h3></div>
+            <div style="display:flex;flex-direction:column;gap:12px;font-size:14px">
+              <div class="flex justify-between">
+                <span style="color:var(--text-secondary)">Member Since</span>
+                <span id="infoJoined">—</span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color:var(--text-secondary)">Last Login</span>
+                <span id="infoLastLogin">—</span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color:var(--text-secondary)">Email Verified</span>
+                <span id="infoVerified">—</span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color:var(--text-secondary)">KYC Status</span>
+                <span id="infoKyc">—</span>
+              </div>
+              <div class="flex justify-between">
+                <span style="color:var(--text-secondary)">Referral Code</span>
+                <span id="infoRefCode" style="font-family:monospace;color:var(--primary);font-weight:700">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error();
+  UI.initSidebar();
+  UI.populateSidebarUser();
+
+  async function loadProfile() {
+    try {
+      const res = await api.get('/auth/me');
+      if (!res.success) return;
+      const u = res.user;
+      document.getElementById('firstName').value = u.first_name || '';
+      document.getElementById('lastName').value = u.last_name || '';
+      document.getElementById('email').value = u.email || '';
+      document.getElementById('phone').value = u.phone || '';
+      document.getElementById('country').value = u.country || '';
+
+      document.getElementById('infoJoined').textContent = fmt.date(u.created_at);
+      document.getElementById('infoLastLogin').textContent = fmt.datetime(u.last_login) || 'First login';
+      document.getElementById('infoVerified').innerHTML = u.email_verified
+        ? '<span class="badge badge-success">Verified</span>'
+        : '<span class="badge badge-warning">Unverified</span>';
+      document.getElementById('infoKyc').innerHTML = fmt.badge(u.kyc_status);
+      document.getElementById('infoRefCode').textContent = u.referral_code || '—';
+    } catch(e) { Toast.error('Failed to load profile'); }
+  }
+
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('saveProfileBtn');
+    const alertBox = document.getElementById('profileAlertBox');
+    UI.setLoading(btn, true, 'Saving...');
+    alertBox.innerHTML = '';
+    try {
+      const res = await api.put('/user/profile', {
+        first_name: document.getElementById('firstName').value.trim(),
+        last_name: document.getElementById('lastName').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        country: document.getElementById('country').value.trim(),
+      });
+      if (res.success) {
+        UI.showAlert(alertBox, '✅ Profile updated successfully!', 'success');
+        // Update stored user name
+        const user = Auth.getUser();
+        if (user) {
+          user.first_name = res.user.first_name;
+          user.last_name = res.user.last_name;
+          Auth.setUser(user);
+          UI.populateSidebarUser();
+        }
+      } else {
+        UI.showAlert(alertBox, res.message || 'Update failed', 'error');
+      }
+    } catch(e) { UI.showAlert(alertBox, 'Connection error', 'error'); }
+    UI.setLoading(btn, false);
+  });
+
+  document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('changePasswordBtn');
+    const alertBox = document.getElementById('passwordAlertBox');
+    const newPass = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+
+    if (newPass.length < 8) { UI.showAlert(alertBox, 'New password must be at least 8 characters', 'error'); return; }
+    if (newPass !== confirm) { UI.showAlert(alertBox, 'New passwords do not match', 'error'); return; }
+
+    UI.setLoading(btn, true, 'Updating...');
+    alertBox.innerHTML = '';
+    try {
+      const res = await api.put('/user/change-password', {
+        current_password: document.getElementById('currentPassword').value,
+        new_password: newPass,
+      });
+      if (res.success) {
+        UI.showAlert(alertBox, '✅ Password changed successfully!', 'success');
+        document.getElementById('passwordForm').reset();
+      } else {
+        UI.showAlert(alertBox, res.message || 'Failed', 'error');
+      }
+    } catch(e) { UI.showAlert(alertBox, 'Connection error', 'error'); }
+    UI.setLoading(btn, false);
+  });
+
+  loadProfile();
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Login — TransAtlantia Trades</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 70% 60% at 30% 50%, rgba(0,148,255,0.06), transparent); pointer-events: none; }
+    .auth-box { width: 100%; max-width: 420px; }
+    .auth-logo { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-display); font-size: 1.3rem; font-weight: 800; margin-bottom: 28px; text-decoration: none; color: var(--text-primary); }
+    .auth-card { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-xl); padding: 32px; }
+    .auth-title { font-family: var(--font-display); font-size: 1.35rem; font-weight: 800; margin-bottom: 6px; }
+    .auth-sub { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 24px; }
+    .divider { text-align: center; color: var(--text-muted); font-size: 0.78rem; margin: 16px 0; position: relative; }
+    .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 42%; height: 1px; background: var(--border); }
+    .divider::before { left: 0; } .divider::after { right: 0; }
+    .auth-footer { text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+<div class="auth-box">
+  <a href="/" class="auth-logo"><div class="brand-icon">⚡</div> TransAtlantia Trades</a>
+  <div class="auth-card">
+    <div class="auth-title">Welcome back</div>
+    <div class="auth-sub">Login to access your investment dashboard</div>
+    <div id="alertBox"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" id="email" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;justify-content:space-between">
+          Password
+          <a href="/forgot-password.html" style="font-weight:400;color:var(--primary);font-size:0.75rem">Forgot password?</a>
+        </label>
+        <input type="password" class="form-control" id="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary btn-full btn-lg mt-2" id="loginBtn">Login to Dashboard</button>
+    </form>
+  </div>
+  <div class="auth-footer">
+    Don't have an account? <a href="/register.html">Create one →</a>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+  Auth.requireGuest();
+
+  // Handle query params
+  const params = new URLSearchParams(location.search);
+  if (params.get('verified') === 'true') UI.showAlert(document.getElementById('alertBox'), 'Email verified! You can now login.', 'success');
+  if (params.get('registered') === 'true') UI.showAlert(document.getElementById('alertBox'), '✅ Account created! Check your email to verify, then login below.', 'success');
+  if (params.get('reset') === 'true') UI.showAlert(document.getElementById('alertBox'), '✅ Password reset successfully! You can now login with your new password.', 'success');
+  if (params.get('error')) UI.showAlert(document.getElementById('alertBox'), 'Invalid or expired verification link.', 'error');
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const alertBox = document.getElementById('alertBox');
+    alertBox.innerHTML = '';
+    UI.setLoading(btn, true, 'Logging in...');
+    try {
+      const res = await api.post('/auth/login', {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+      });
+      if (res.success) {
+        Auth.setToken(res.token);
+        Auth.setUser(res.user);
+        Toast.success('Login successful! Redirecting...');
+        setTimeout(() => {
+          window.location.href = res.user.is_admin ? '/admin/dashboard.html' : '/dashboard.html';
+        }, 600);
+      } else {
+        UI.showAlert(alertBox, res.message || 'Login failed', 'error');
+        UI.setLoading(btn, false);
+      }
+    } catch (err) {
+      UI.showAlert(alertBox, 'Connection error. Please try again.', 'error');
+      UI.setLoading(btn, false);
+    }
+  });
+</script>
+</body>
+</html>

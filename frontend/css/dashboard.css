@@ -1,0 +1,192 @@
+/* LAYOUT */
+body { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 240px; min-height: 100vh; background: var(--bg-card);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  position: fixed; left: 0; top: 0; bottom: 0; z-index: 50;
+  transition: transform 0.3s ease;
+}
+.sidebar-logo {
+  padding: 24px 20px; border-bottom: 1px solid var(--border);
+}
+.sidebar-logo .nav-logo { text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.logo-mark {
+  width: 34px; height: 34px; background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; color: #0a0d15; font-size: 0.85rem;
+}
+.logo-text { font-family: var(--font-display); font-size: 1rem; color: var(--text-primary); font-weight: 600; }
+.logo-text em { color: var(--gold); font-style: normal; }
+.sidebar-nav {
+  flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 12px; padding: 11px 14px;
+  border-radius: var(--radius-sm); color: var(--text-secondary);
+  font-size: 0.88rem; font-weight: 500; text-decoration: none;
+  transition: all 0.2s; border: 1px solid transparent;
+}
+.nav-item:hover { background: var(--bg-dark); color: var(--text-primary); }
+.nav-item.active {
+  background: rgba(201,168,76,0.1); color: var(--gold);
+  border-color: rgba(201,168,76,0.2);
+}
+.ni { font-size: 1rem; width: 20px; text-align: center; }
+.sidebar-footer { padding: 16px 12px; border-top: 1px solid var(--border); }
+
+.main-wrap { margin-left: 240px; min-height: 100vh; display: flex; flex-direction: column; flex: 1; }
+
+/* TOPBAR */
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  background: rgba(8,13,26,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 60px;
+}
+.sidebar-toggle {
+  background: none; border: none; color: var(--text-secondary);
+  font-size: 1.2rem; cursor: pointer; display: none; padding: 4px;
+}
+.topbar-title { font-family: var(--font-display); font-size: 1.2rem; flex: 1; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.notif-btn {
+  position: relative; background: none; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 7px 12px; color: var(--text-secondary);
+  cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
+}
+.notif-btn:hover { border-color: var(--gold); color: var(--gold); }
+.notif-badge {
+  position: absolute; top: -4px; right: -4px; background: var(--red);
+  color: #fff; font-size: 0.65rem; width: 16px; height: 16px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 6px 12px;
+}
+.user-avatar {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; color: #0a0d15; font-size: 0.82rem;
+}
+.user-chip span { font-size: 0.88rem; color: var(--text-secondary); }
+
+/* CONTENT */
+.content { flex: 1; padding: 28px 28px; max-width: 1200px; }
+
+/* Welcome */
+.welcome-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 28px;
+}
+.welcome-bar h2 { font-size: 1.6rem; color: var(--text-primary); }
+
+/* Investment mini cards */
+.mini-plan {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid rgba(26,45,74,0.5);
+}
+.mini-plan:last-child { border-bottom: none; }
+.mini-plan-icon { font-size: 1.5rem; }
+.mini-plan-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.mini-plan-roi { font-family: var(--font-display); font-size: 1.4rem; color: var(--plan-color); font-weight: 600; }
+
+/* Active investment */
+.inv-item {
+  padding: 16px 0; border-bottom: 1px solid rgba(26,45,74,0.5);
+}
+.inv-item:last-child { border-bottom: none; }
+
+/* Referral snap */
+.referral-snap {
+  display: grid; grid-template-columns: auto auto 1fr; gap: 32px; align-items: start;
+}
+.ref-stat { text-align: center; }
+.ref-val { font-family: var(--font-display); font-size: 2rem; color: var(--text-primary); font-weight: 600; }
+.ref-val.green { color: var(--green); }
+.ref-lbl { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+
+/* Notifications Panel */
+.notif-panel {
+  position: fixed; top: 0; right: -380px; width: 360px; height: 100vh;
+  background: var(--bg-card); border-left: 1px solid var(--border);
+  z-index: 200; transition: right 0.3s ease; overflow-y: auto;
+}
+.notif-panel.open { right: 0; }
+.notif-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0;
+  background: var(--bg-card); z-index: 1;
+}
+.notif-header h4 { font-family: var(--font-display); font-size: 1.2rem; }
+.notif-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 199; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.notif-overlay.open { opacity: 1; pointer-events: all; }
+.notif-item {
+  display: flex; gap: 12px; padding: 16px 20px;
+  border-bottom: 1px solid rgba(26,45,74,0.4); align-items: flex-start;
+  transition: background 0.2s;
+}
+.notif-item:hover { background: var(--bg-dark); }
+.notif-item.unread { background: rgba(201,168,76,0.04); }
+.notif-dot-indicator { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.notif-item strong { display: block; font-size: 0.88rem; color: var(--text-primary); margin-bottom: 3px; }
+.notif-item p { font-size: 0.82rem; color: var(--text-secondary); margin: 0 0 4px; }
+
+/* Card title */
+.card-title h3 { font-size: 1.2rem; }
+
+/* Deposit / Withdraw page */
+.page-header { margin-bottom: 32px; }
+.page-header h2 { font-size: 1.8rem; }
+.crypto-tabs { display: flex; gap: 10px; margin-bottom: 28px; }
+.crypto-tab {
+  display: flex; align-items: center; gap: 10px; padding: 14px 20px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer; background: var(--bg-dark); transition: all 0.2s;
+  font-size: 0.9rem; color: var(--text-secondary);
+}
+.crypto-tab:hover { border-color: var(--gold); color: var(--gold); }
+.crypto-tab.active {
+  border-color: var(--gold); background: rgba(201,168,76,0.08); color: var(--gold);
+}
+.crypto-tab .ct-symbol { font-family: var(--font-mono); font-size: 1rem; font-weight: 500; }
+.qr-placeholder {
+  width: 160px; height: 160px; background: var(--bg-deep);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; color: var(--text-muted); text-align: center;
+  margin: 0 auto 20px;
+}
+
+/* KYC / Profile */
+.kyc-doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.doc-upload {
+  border: 2px dashed var(--border); border-radius: var(--radius-sm);
+  padding: 24px; text-align: center; cursor: pointer;
+  transition: border-color 0.2s;
+}
+.doc-upload:hover { border-color: var(--gold); }
+.doc-upload input { display: none; }
+.doc-upload .du-icon { font-size: 2rem; margin-bottom: 8px; }
+.doc-upload .du-label { font-size: 0.85rem; color: var(--text-secondary); }
+.doc-upload .du-file { font-size: 0.8rem; color: var(--green); margin-top: 6px; }
+
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: none; box-shadow: 4px 0 20px rgba(0,0,0,0.5); }
+  .main-wrap { margin-left: 0; }
+  .sidebar-toggle { display: block; }
+  .referral-snap { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .content { padding: 20px 16px; }
+  .grid-4, .grid-2 { grid-template-columns: 1fr; }
+  .welcome-bar { flex-direction: column; align-items: flex-start; gap: 12px; }
+}

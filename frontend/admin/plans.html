@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Manage Plans — Admin</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand" style="border-bottom:2px solid var(--danger)">
+      <div class="brand-logo" style="background:linear-gradient(135deg,var(--danger),#cc0000)">🛡</div>
+      <div><div class="brand-name">Admin Panel</div><div class="brand-sub">TransAtlantia Trades</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/admin/users.html" class="sidebar-link"><span class="nav-icon">👥</span> Users</a>
+      <a href="/admin/deposits.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposits</a>
+      <a href="/admin/withdrawals.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdrawals</a>
+      <a href="/admin/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/admin/plans.html" class="sidebar-link active"><span class="nav-icon">📊</span> Plans</a>
+      <a href="/admin/chat.html" class="sidebar-link"><span class="nav-icon">💬</span> Live Chat</a>
+      <a href="/admin/settings.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Settings</a>
+      <a href="/admin/email-templates.html" class="sidebar-link"><span class="nav-icon">📧</span> Email Templates</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" style="background:var(--danger)">A</div><div class="user-info"><div class="user-name">Admin</div><div class="user-role" style="color:var(--danger)">Administrator</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>Investment Plans</h1><p>Edit plan details, ROI, and limits</p></div>
+    </header>
+    <div class="page-content">
+      <div id="plansContainer" class="stagger">
+        <div class="skeleton" style="height:300px;border-radius:var(--radius-xl)"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header"><h3>Edit Plan</h3><button class="modal-close" onclick="UI.closeModal('editModal')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editPlanId">
+      <div class="form-group"><label class="form-label">Plan Name</label><input type="text" class="form-control" id="editName"></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" id="editDesc" style="min-height:70px"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label class="form-label">Daily ROI (%)</label><input type="number" class="form-control" id="editRoi" min="0.01" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Duration (days)</label><input type="number" class="form-control" id="editDuration" min="1"></div>
+        <div class="form-group"><label class="form-label">Min Amount ($)</label><input type="number" class="form-control" id="editMin" min="1"></div>
+        <div class="form-group"><label class="form-label">Max Amount ($)</label><input type="number" class="form-control" id="editMax" min="1"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Color (hex)</label><input type="color" class="form-control" id="editColor" style="height:44px;padding:4px 8px;cursor:pointer"></div>
+      <div class="form-group">
+        <label class="form-label">Features (one per line)</label>
+        <textarea class="form-control" id="editFeatures" style="min-height:100px" placeholder="2.5% Daily ROI&#10;30-Day Duration&#10;24/7 Support"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-control" id="editActive">
+          <option value="true">Active (visible to users)</option>
+          <option value="false">Inactive (hidden)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="UI.closeModal('editModal')">Cancel</button>
+      <button class="btn btn-primary" id="savePlanBtn" onclick="savePlan()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script>
+  if (!Auth.requireAdmin()) throw new Error();
+  UI.initSidebar();
+  let plans = [];
+
+  async function loadPlans() {
+    try {
+      const res = await api.get('/admin/plans');
+      plans = res.plans || [];
+      document.getElementById('plansContainer').innerHTML = plans.map(p=>`
+        <div class="card mb-3" style="border-left:4px solid ${p.color_hex}">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 style="color:${p.color_hex}">${p.name} Plan <span class="badge ${p.is_active?'badge-success':'badge-muted'} ml-1">${p.is_active?'Active':'Inactive'}</span></h3>
+              <p style="font-size:13px;color:var(--text-secondary);margin-top:4px">${p.description||''}</p>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="openEdit('${p.id}')">✏️ Edit</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+            <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Daily ROI</div><div style="font-size:1.4rem;font-weight:800;color:${p.color_hex}">${p.roi_percent}%</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Duration</div><div style="font-size:1.4rem;font-weight:800">${p.duration_days} days</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Min Deposit</div><div style="font-size:1.4rem;font-weight:800">$${parseFloat(p.min_amount).toLocaleString()}</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Max Deposit</div><div style="font-size:1.4rem;font-weight:800">$${parseFloat(p.max_amount).toLocaleString()}</div></div>
+          </div>
+        </div>
+      `).join('');
+    } catch(e) { Toast.error('Failed to load plans'); }
+  }
+
+  function openEdit(id) {
+    const p = plans.find(x=>x.id===id);
+    if (!p) return;
+    document.getElementById('editPlanId').value = p.id;
+    document.getElementById('editName').value = p.name;
+    document.getElementById('editDesc').value = p.description||'';
+    document.getElementById('editRoi').value = p.roi_percent;
+    document.getElementById('editDuration').value = p.duration_days;
+    document.getElementById('editMin').value = p.min_amount;
+    document.getElementById('editMax').value = p.max_amount;
+    document.getElementById('editColor').value = p.color_hex||'#0094FF';
+    document.getElementById('editFeatures').value = (p.features||[]).join('\n');
+    document.getElementById('editActive').value = p.is_active?'true':'false';
+    UI.openModal('editModal');
+  }
+
+  async function savePlan() {
+    const btn = document.getElementById('savePlanBtn');
+    const id = document.getElementById('editPlanId').value;
+    const features = document.getElementById('editFeatures').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    UI.setLoading(btn, true, 'Saving...');
+    try {
+      const res = await api.put('/admin/plans/'+id, {
+        name: document.getElementById('editName').value,
+        description: document.getElementById('editDesc').value,
+        roi_percent: parseFloat(document.getElementById('editRoi').value),
+        duration_days: parseInt(document.getElementById('editDuration').value),
+        min_amount: parseFloat(document.getElementById('editMin').value),
+        max_amount: parseFloat(document.getElementById('editMax').value),
+        color_hex: document.getElementById('editColor').value,
+        features,
+        is_active: document.getElementById('editActive').value === 'true',
+      });
+      if (res.success) { Toast.success('Plan updated!'); UI.closeModal('editModal'); loadPlans(); }
+      else Toast.error(res.message||'Failed');
+    } catch(e) { Toast.error('Error saving'); }
+    UI.setLoading(btn, false);
+  }
+
+  loadPlans();
+</script>
+
+<script>
+// Poll for unread chat messages and update badge
+async function updateChatBadge() {
+  try {
+    const res = await api.get('/chat/admin/unread');
+    const badge = document.getElementById('chatNavBadge');
+    if (badge) {
+      if (res.count > 0) { badge.style.display = 'inline-flex'; badge.textContent = res.count > 9 ? '9+' : res.count; }
+      else badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // Add badge span to chat link if not present
+  const chatLink = document.querySelector('a[href="/admin/chat.html"]');
+  if (chatLink && !chatLink.querySelector('#chatNavBadge')) {
+    const badge = document.createElement('span');
+    badge.id = 'chatNavBadge';
+    badge.style.cssText = 'display:none;background:#FF4757;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:100px;margin-left:auto;min-width:18px;text-align:center';
+    chatLink.appendChild(badge);
+  }
+  if (Auth.isAdmin()) { updateChatBadge(); setInterval(updateChatBadge, 20000); }
+});
+</script>
+</body>
+</html>

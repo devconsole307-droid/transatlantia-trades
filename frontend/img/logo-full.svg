@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 60" fill="none">
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0094FF"/>
+      <stop offset="100%" stop-color="#00D4AA"/>
+    </linearGradient>
+  </defs>
+  <!-- Icon mark -->
+  <rect width="48" height="48" rx="10" y="6" fill="url(#lg)"/>
+  <rect x="10" y="34" width="7" height="12" rx="2" fill="white" opacity="0.95"/>
+  <rect x="21" y="27" width="7" height="19" rx="2" fill="white" opacity="0.95"/>
+  <rect x="32" y="18" width="7" height="28" rx="2" fill="white" opacity="0.95"/>
+  <polyline points="10,26 21,18 32,11" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <polygon points="32,7 40,14 24,15" fill="white"/>
+  <!-- Text -->
+  <text x="60" y="30" font-family="Manrope,Inter,sans-serif" font-weight="800" font-size="18" fill="white">TransAtlantia</text>
+  <text x="60" y="48" font-family="Manrope,Inter,sans-serif" font-weight="600" font-size="12" fill="#7A8BA8" letter-spacing="2">TRADES</text>
+</svg>

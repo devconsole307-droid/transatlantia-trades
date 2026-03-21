@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>KYC Verification — TransAtlantia Trades</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .upload-zone{border:2px dashed var(--border);border-radius:var(--radius-md);padding:28px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+    .upload-zone:hover,.upload-zone.has-file{border-color:var(--primary);background:var(--primary-glow)}
+    .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+    .upload-zone .upload-icon{font-size:2rem;margin-bottom:8px}
+    .upload-zone .upload-label{font-size:13px;font-weight:600;color:var(--text-secondary)}
+    .upload-zone .upload-sub{font-size:11px;color:var(--text-muted);margin-top:4px}
+    .upload-zone.has-file .upload-label{color:var(--success)}
+    .kyc-steps{display:flex;gap:0;margin-bottom:32px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .kyc-step{flex:1;padding:14px;text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);border-right:1px solid var(--border)}
+    .kyc-step:last-child{border-right:none}
+    .kyc-step.done{color:var(--success);background:rgba(46,213,115,.06)}
+    .kyc-step.current{color:var(--primary);background:var(--primary-glow)}
+    .kyc-step-num{font-family:var(--font-display);font-size:1.1rem;font-weight:800;display:block;margin-bottom:3px}
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="/img/logo.svg" alt="TransAtlantia" style="width:36px;height:36px;border-radius:8px;flex-shrink:0">
+      <div>
+        <div class="brand-name">TransAtlantia</div>
+        <div class="brand-sub">Trades</div>
+      </div>
+    </div></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/deposit.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposit</a>
+      <a href="/investments.html" class="sidebar-link"><span class="nav-icon">📈</span> Investments</a>
+      <a href="/withdraw.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdraw</a>
+      <a href="/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/referrals.html" class="sidebar-link"><span class="nav-icon">👥</span> Referrals</a>
+      <a href="/kyc.html" class="sidebar-link active"><span class="nav-icon">🪪</span> KYC</a>
+      <a href="/profile.html" class="sidebar-link"><span class="nav-icon">👤</span> Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" id="sidebarUserAvatar">?</div><div class="user-info"><div id="sidebarUserName" class="user-name">—</div><div id="sidebarUserEmail" class="user-role">—</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>KYC Verification</h1><p>Verify your identity to unlock full account features</p></div>
+    </header>
+
+    <div class="page-content">
+      <div style="max-width:700px">
+
+        <!-- STATUS BANNER -->
+        <div id="kycStatusBanner" class="mb-3"></div>
+
+        <!-- WHY KYC -->
+        <div class="card mb-3">
+          <div class="flex gap-3 items-start">
+            <div style="font-size:2rem;flex-shrink:0">🛡️</div>
+            <div>
+              <h3 style="font-size:15px;margin-bottom:6px">Why do we need this?</h3>
+              <p style="font-size:13px;color:var(--text-secondary);line-height:1.7">KYC (Know Your Customer) verification is a regulatory requirement that protects both you and the platform from fraud and money laundering. Verified accounts enjoy higher withdrawal limits and full platform access.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ALREADY SUBMITTED/APPROVED -->
+        <div id="alreadySubmitted" style="display:none" class="card mb-3">
+          <div style="text-align:center;padding:20px 0">
+            <div style="font-size:3rem;margin-bottom:12px" id="kycStatusIcon">⏳</div>
+            <h3 id="kycStatusTitle">Documents Under Review</h3>
+            <p style="color:var(--text-secondary);font-size:14px;margin-top:8px" id="kycStatusDesc">Your documents have been submitted and are being reviewed by our compliance team. This usually takes 1–2 business days.</p>
+          </div>
+        </div>
+
+        <!-- UPLOAD FORM -->
+        <div id="uploadForm" class="card">
+          <div class="card-header"><h3>📄 Upload Documents</h3></div>
+
+          <div class="alert alert-info mb-3">
+            ℹ️ Upload clear, legible photos or scans. Files must be JPG, PNG, or PDF under 10MB each.
+          </div>
+
+          <form id="kycForm">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div class="form-group">
+                <label class="form-label">ID Card / Passport Front *</label>
+                <div class="upload-zone" id="zone_id_front">
+                  <input type="file" name="id_front" accept="image/*,.pdf" onchange="fileSelected(this,'zone_id_front')">
+                  <div class="upload-icon">🪪</div>
+                  <div class="upload-label">Front of ID / Passport</div>
+                  <div class="upload-sub">JPG, PNG or PDF</div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">ID Card Back <span style="opacity:.6">(if applicable)</span></label>
+                <div class="upload-zone" id="zone_id_back">
+                  <input type="file" name="id_back" accept="image/*,.pdf" onchange="fileSelected(this,'zone_id_back')">
+                  <div class="upload-icon">🪪</div>
+                  <div class="upload-label">Back of ID Card</div>
+                  <div class="upload-sub">JPG, PNG or PDF</div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Proof of Address *</label>
+                <div class="upload-zone" id="zone_proof_of_address">
+                  <input type="file" name="proof_of_address" accept="image/*,.pdf" onchange="fileSelected(this,'zone_proof_of_address')">
+                  <div class="upload-icon">🏠</div>
+                  <div class="upload-label">Utility Bill / Bank Statement</div>
+                  <div class="upload-sub">Must show name & address (last 3 months)</div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Selfie with ID *</label>
+                <div class="upload-zone" id="zone_selfie">
+                  <input type="file" name="selfie" accept="image/*" onchange="fileSelected(this,'zone_selfie')">
+                  <div class="upload-icon">🤳</div>
+                  <div class="upload-label">Selfie holding your ID</div>
+                  <div class="upload-sub">Photo must be clear and unobstructed</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="kycAlertBox" class="mt-2"></div>
+            <button type="submit" class="btn btn-primary btn-block btn-lg mt-3" id="submitKycBtn">
+              📤 Submit Documents for Review
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error();
+  UI.initSidebar();
+  UI.populateSidebarUser();
+
+  async function loadKycStatus() {
+    try {
+      const res = await api.get('/auth/me');
+      if (!res.success) return;
+      const status = res.user.kyc_status;
+      const banner = document.getElementById('kycStatusBanner');
+
+      if (status === 'approved') {
+        banner.innerHTML = '<div class="alert alert-success">✅ Your identity has been verified. Your account is fully activated.</div>';
+        document.getElementById('alreadySubmitted').style.display = 'block';
+        document.getElementById('uploadForm').style.display = 'none';
+        document.getElementById('kycStatusIcon').textContent = '✅';
+        document.getElementById('kycStatusTitle').textContent = 'Identity Verified!';
+        document.getElementById('kycStatusDesc').textContent = 'Your account is fully verified and all features are unlocked.';
+      } else if (status === 'submitted') {
+        banner.innerHTML = '<div class="alert alert-warning">⏳ Your documents are under review. We\'ll notify you by email once completed (1–2 business days).</div>';
+        document.getElementById('alreadySubmitted').style.display = 'block';
+        document.getElementById('uploadForm').style.display = 'none';
+      } else if (status === 'rejected') {
+        banner.innerHTML = '<div class="alert alert-danger">❌ Your documents were rejected. Please re-upload clearer copies below.</div>';
+      } else {
+        banner.innerHTML = '<div class="alert alert-info">ℹ️ Please complete KYC verification to access all platform features and higher withdrawal limits.</div>';
+      }
+    } catch(e) {}
+  }
+
+  function fileSelected(input, zoneId) {
+    const zone = document.getElementById(zoneId);
+    const file = input.files[0];
+    if (file) {
+      zone.classList.add('has-file');
+      zone.querySelector('.upload-label').textContent = '✓ ' + file.name;
+      zone.querySelector('.upload-sub').textContent = (file.size/1024/1024).toFixed(2) + ' MB';
+    }
+  }
+
+  document.getElementById('kycForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitKycBtn');
+    const alertBox = document.getElementById('kycAlertBox');
+    alertBox.innerHTML = '';
+
+    const formData = new FormData(e.target);
+    const hasRequired = formData.get('id_front') && formData.get('proof_of_address') && formData.get('selfie');
+    if (!hasRequired || !formData.get('id_front').size) {
+      UI.showAlert(alertBox, 'Please upload at minimum: ID Front, Proof of Address, and Selfie', 'error');
+      return;
+    }
+
+    UI.setLoading(btn, true, 'Uploading...');
+    try {
+      const res = await api.post('/user/kyc', formData, true);
+      if (res.success) {
+        UI.showAlert(alertBox, '✅ Documents submitted successfully! We\'ll review within 1–2 business days.', 'success');
+        setTimeout(() => loadKycStatus(), 1500);
+      } else {
+        UI.showAlert(alertBox, res.message || 'Upload failed', 'error');
+      }
+    } catch(e) { UI.showAlert(alertBox, 'Connection error. Please try again.', 'error'); }
+    UI.setLoading(btn, false);
+  });
+
+  loadKycStatus();
+</script>
+</body>
+</html>

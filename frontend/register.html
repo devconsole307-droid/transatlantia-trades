@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Register — TransAtlantia Trades</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    body { display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px; }
+    body::before { content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 60% at 70% 50%, rgba(0,148,255,0.06), transparent);pointer-events:none; }
+    .auth-box { width:100%;max-width:480px; }
+    .auth-logo { display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--font-display);font-size:1.3rem;font-weight:800;margin-bottom:24px;text-decoration:none;color:var(--text-primary); }
+    .auth-card { background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:32px; }
+    .grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+    .auth-footer { text-align:center;margin-top:20px;font-size:0.85rem;color:var(--text-muted); }
+  </style>
+</head>
+<body>
+<div class="auth-box">
+  <a href="/" class="auth-logo"><div class="brand-icon">⚡</div> TransAtlantia Trades</a>
+  <div class="auth-card">
+    <h2 style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;margin-bottom:4px">Create Account</h2>
+    <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:24px">Start earning daily returns on your investments</p>
+    <div id="alertBox"></div>
+    <form id="registerForm">
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" class="form-control" id="firstName" placeholder="John" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" class="form-control" id="lastName" placeholder="Doe" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" id="email" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone (optional)</label>
+        <input type="tel" class="form-control" id="phone" placeholder="+1 234 567 8900">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Country</label>
+        <input type="text" class="form-control" id="country" placeholder="United States">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" placeholder="Min 8 characters" required autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input type="password" class="form-control" id="confirmPassword" placeholder="Repeat password" required>
+      </div>
+      <div class="form-group" id="refCodeGroup">
+        <label class="form-label">Referral Code <span style="opacity:0.5">(optional)</span></label>
+        <input type="text" class="form-control" id="refCode" placeholder="e.g. ABC123" style="text-transform:uppercase">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="registerBtn">Create Account →</button>
+    </form>
+  </div>
+  <div class="auth-footer">Already have an account? <a href="/login.html">Login here →</a></div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+  Auth.requireGuest();
+
+  // Pre-fill referral code from URL
+  const params = new URLSearchParams(location.search);
+  const refParam = params.get('ref');
+  if (refParam) { document.getElementById('refCode').value = refParam.toUpperCase(); }
+
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const alertBox = document.getElementById('alertBox');
+    const btn = document.getElementById('registerBtn');
+    alertBox.innerHTML = '';
+
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    if (password !== confirm) { UI.showAlert(alertBox,'Passwords do not match','error'); return; }
+    if (password.length < 8) { UI.showAlert(alertBox,'Password must be at least 8 characters','error'); return; }
+
+    UI.setLoading(btn, true, 'Creating account...');
+    try {
+      const res = await api.post('/auth/register', {
+        first_name: document.getElementById('firstName').value.trim(),
+        last_name: document.getElementById('lastName').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        country: document.getElementById('country').value.trim(),
+        password,
+        referral_code: document.getElementById('refCode').value.trim() || undefined,
+      });
+      if (res.success) {
+        UI.showAlert(alertBox, '✅ Account created! Redirecting to login...', 'success');
+        document.getElementById('registerForm').reset();
+        setTimeout(() => { window.location.href = '/login.html?registered=true'; }, 2000);
+      } else {
+        UI.showAlert(alertBox, res.message || res.errors?.[0]?.msg || 'Registration failed', 'error');
+      }
+    } catch(e) { UI.showAlert(alertBox, 'Connection error. Please try again.', 'error'); }
+    UI.setLoading(btn, false);
+  });
+</script>
+</body>
+</html>

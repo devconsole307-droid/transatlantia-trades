@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Manage Withdrawals — Admin</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand" style="border-bottom:2px solid var(--danger)">
+      <div class="brand-logo" style="background:linear-gradient(135deg,var(--danger),#cc0000)">🛡</div>
+      <div><div class="brand-name">Admin Panel</div><div class="brand-sub">TransAtlantia Trades</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/admin/users.html" class="sidebar-link"><span class="nav-icon">👥</span> Users</a>
+      <a href="/admin/deposits.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposits</a>
+      <a href="/admin/withdrawals.html" class="sidebar-link active"><span class="nav-icon">📤</span> Withdrawals</a>
+      <a href="/admin/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/admin/plans.html" class="sidebar-link"><span class="nav-icon">📊</span> Plans</a>
+      <a href="/admin/chat.html" class="sidebar-link"><span class="nav-icon">💬</span> Live Chat</a>
+      <a href="/admin/settings.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Settings</a>
+      <a href="/admin/email-templates.html" class="sidebar-link"><span class="nav-icon">📧</span> Email Templates</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" style="background:var(--danger)">A</div><div class="user-info"><div class="user-name">Admin</div><div class="user-role" style="color:var(--danger)">Administrator</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>Withdrawal Management</h1><p>Approve or reject user withdrawals</p></div>
+    </header>
+
+    <div class="page-content">
+      <div class="card mb-3">
+        <div class="flex gap-2 flex-wrap">
+          <button class="btn btn-primary btn-sm filter-btn active" data-status="pending" onclick="filterWith('pending',this)">⏳ Pending</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-status="approved" onclick="filterWith('approved',this)">✅ Approved</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-status="rejected" onclick="filterWith('rejected',this)">❌ Rejected</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-status="all" onclick="filterWith('all',this)">📋 All</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>User</th><th>Amount</th><th>Currency</th><th>Wallet Address</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="withdrawalsTable"><tr><td colspan="7" class="table-empty">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="actionModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header"><h3 id="modalTitle">Action</h3><button class="modal-close" onclick="UI.closeModal('actionModal')">×</button></div>
+    <div class="modal-body">
+      <div id="modalInfo" style="font-size:14px;color:var(--text-secondary);margin-bottom:16px"></div>
+      <div class="form-group">
+        <label class="form-label">Admin Note <span style="opacity:0.5">(optional)</span></label>
+        <textarea class="form-control" id="adminNote" placeholder="Reason or note..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="UI.closeModal('actionModal')">Cancel</button>
+      <button class="btn" id="confirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script>
+  if (!Auth.requireAdmin()) throw new Error();
+  UI.initSidebar();
+  let pendingAction = null;
+
+  async function loadWithdrawals(status='pending') {
+    document.getElementById('withdrawalsTable').innerHTML = '<tr><td colspan="7" class="table-empty">Loading...</td></tr>';
+    try {
+      const res = await api.get('/admin/withdrawals?status='+status);
+      const list = res.withdrawals || [];
+      if (!list.length) { document.getElementById('withdrawalsTable').innerHTML = '<tr><td colspan="7" class="table-empty">No withdrawals found</td></tr>'; return; }
+      document.getElementById('withdrawalsTable').innerHTML = list.map(w=>`
+        <tr>
+          <td style="font-size:12px">${fmt.date(w.created_at)}</td>
+          <td><div style="font-weight:600;font-size:13px">${w.first_name} ${w.last_name}</div><div style="font-size:11px;color:var(--text-muted)">${w.email}</div></td>
+          <td><strong>${fmt.money(w.amount)}</strong></td>
+          <td style="font-family:monospace;font-size:12px">${w.currency}</td>
+          <td style="font-size:11px;font-family:monospace;max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${w.wallet_address}">${w.wallet_address}</td>
+          <td>${fmt.badge(w.status)}</td>
+          <td>${w.status==='pending'?`
+            <div class="flex gap-1">
+              <button class="btn btn-success btn-sm" onclick="openAction('approve','${w.id}','${w.first_name} ${w.last_name}',${w.amount})">✓ Approve</button>
+              <button class="btn btn-danger btn-sm" onclick="openAction('reject','${w.id}','${w.first_name} ${w.last_name}',${w.amount})">✗ Reject</button>
+            </div>
+          `:'<span style="color:var(--text-muted);font-size:12px">'+(w.admin_note||'—')+'</span>'}</td>
+        </tr>
+      `).join('');
+    } catch(e) { Toast.error('Failed to load'); }
+  }
+
+  function openAction(action, id, name, amount) {
+    pendingAction = { action, id };
+    const isApprove = action === 'approve';
+    document.getElementById('modalTitle').textContent = isApprove ? '✅ Approve Withdrawal' : '❌ Reject Withdrawal';
+    document.getElementById('modalInfo').innerHTML = `<strong>${isApprove?'Approving':'Rejecting'}</strong> withdrawal of <strong>${fmt.money(amount)}</strong> for <strong>${name}</strong>.${!isApprove?' Funds will be returned to their balance.':''}`;
+    document.getElementById('adminNote').value = '';
+    const btn = document.getElementById('confirmBtn');
+    btn.className = `btn ${isApprove?'btn-success':'btn-danger'}`;
+    btn.textContent = isApprove ? '✅ Approve' : '❌ Reject';
+    btn.onclick = executeAction;
+    UI.openModal('actionModal');
+  }
+
+  async function executeAction() {
+    if (!pendingAction) return;
+    const { action, id } = pendingAction;
+    const note = document.getElementById('adminNote').value;
+    const btn = document.getElementById('confirmBtn');
+    UI.setLoading(btn, true, 'Processing...');
+    try {
+      const res = await api.patch(`/admin/withdrawals/${id}/${action}`, { admin_note: note });
+      if (res.success) {
+        Toast.success(action==='approve'?'Withdrawal approved':'Withdrawal rejected');
+        UI.closeModal('actionModal');
+        loadWithdrawals(document.querySelector('.filter-btn.active')?.dataset.status||'pending');
+      } else Toast.error(res.message||'Failed');
+    } catch(e) { Toast.error('Error'); }
+    UI.setLoading(btn, false);
+  }
+
+  function filterWith(status, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b=>{b.className='btn btn-outline btn-sm filter-btn';});
+    btn.className='btn btn-primary btn-sm filter-btn active';
+    loadWithdrawals(status);
+  }
+
+  loadWithdrawals('pending');
+</script>
+
+<script>
+// Poll for unread chat messages and update badge
+async function updateChatBadge() {
+  try {
+    const res = await api.get('/chat/admin/unread');
+    const badge = document.getElementById('chatNavBadge');
+    if (badge) {
+      if (res.count > 0) { badge.style.display = 'inline-flex'; badge.textContent = res.count > 9 ? '9+' : res.count; }
+      else badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // Add badge span to chat link if not present
+  const chatLink = document.querySelector('a[href="/admin/chat.html"]');
+  if (chatLink && !chatLink.querySelector('#chatNavBadge')) {
+    const badge = document.createElement('span');
+    badge.id = 'chatNavBadge';
+    badge.style.cssText = 'display:none;background:#FF4757;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:100px;margin-left:auto;min-width:18px;text-align:center';
+    chatLink.appendChild(badge);
+  }
+  if (Auth.isAdmin()) { updateChatBadge(); setInterval(updateChatBadge, 20000); }
+});
+</script>
+</body>
+</html>

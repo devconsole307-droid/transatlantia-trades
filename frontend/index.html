@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>TransAtlantia Trades — Profitability on the Rise</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    /* ---- NAVBAR ---- */
+    .navbar{position:fixed;top:0;left:0;right:0;z-index:900;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between;background:rgba(7,11,20,0.85);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.06);transition:all .3s}
+    .navbar.scrolled{background:rgba(7,11,20,0.97);box-shadow:0 4px 30px rgba(0,0,0,0.5)}
+    .navbar-brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:1.1rem;color:var(--text-white);text-decoration:none}
+    .brand-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--primary),#004db3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+    .navbar-nav{display:flex;align-items:center;gap:4px;list-style:none}
+    .navbar-nav li{position:relative}
+    .navbar-nav > li > a, .navbar-nav > li > .nav-trigger{
+      display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--radius-md);
+      color:var(--text-secondary);font-size:0.875rem;font-weight:500;
+      text-decoration:none;cursor:pointer;transition:all var(--transition);
+      background:none;border:none;font-family:var(--font-body);
+    }
+    .navbar-nav > li > a:hover,.navbar-nav > li > .nav-trigger:hover{color:var(--text-white);background:rgba(255,255,255,0.06)}
+    .navbar-nav > li > a.active{color:var(--primary)}
+    /* Dropdown caret */
+    .nav-caret{font-size:10px;transition:transform .2s;display:inline-block}
+    .nav-dropdown-wrap:hover .nav-caret{transform:rotate(180deg)}
+    /* Dropdown menu */
+    .nav-dropdown{
+      position:absolute;top:calc(100% + 8px);left:0;
+      background:var(--bg-card);border:1px solid var(--border-light);
+      border-radius:var(--radius-lg);padding:8px;min-width:220px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.5);
+      opacity:0;visibility:hidden;transform:translateY(-8px);
+      transition:all .2s ease;z-index:1000;
+    }
+    .nav-dropdown-wrap:hover .nav-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+    .nav-dropdown a{
+      display:flex;align-items:center;gap:12px;padding:10px 12px;
+      border-radius:var(--radius-md);color:var(--text-secondary);font-size:0.86rem;
+      text-decoration:none;transition:all .15s;
+    }
+    .nav-dropdown a:hover{background:var(--primary-glow);color:var(--primary)}
+    .nav-dropdown .dd-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+    .nav-dropdown .dd-text strong{display:block;font-weight:600;color:var(--text-white);font-size:0.82rem}
+    .nav-dropdown .dd-text span{font-size:0.74rem;color:var(--text-muted)}
+    .navbar-actions{display:flex;align-items:center;gap:10px}
+    /* Hamburger */
+    .nav-hamburger{display:none;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-primary);cursor:pointer;padding:8px 10px;font-size:16px}
+    /* Google Translate widget */
+    .gt-container{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted)}
+    #google_translate_element select{background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);font-size:12px;padding:4px 8px;border-radius:6px;cursor:pointer;outline:none}
+    .goog-te-banner-frame{display:none!important}
+    body{top:0!important}
+
+    /* ---- HERO ---- */
+    .hero{min-height:100vh;display:flex;align-items:center;padding-top:80px;position:relative;overflow:hidden}
+    .hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(0,148,255,.07),transparent 70%),radial-gradient(ellipse 50% 40% at 20% 80%,rgba(245,184,0,.04),transparent 60%)}
+    .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(24,35,56,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(24,35,56,.35) 1px,transparent 1px);background-size:60px 60px}
+    .hero-content{position:relative;z-index:1}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:20px;background:rgba(0,148,255,.1);border:1px solid rgba(0,148,255,.2);color:var(--primary);font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:22px}
+    .eyebrow::before{content:'●';font-size:.5rem;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .hero h1{font-size:clamp(2rem,5vw,3.4rem);font-weight:800;line-height:1.1;margin-bottom:18px}
+    .hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--primary),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-desc{font-size:1rem;color:var(--text-secondary);line-height:1.7;margin-bottom:32px;max-width:480px}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:44px}
+    .hero-stats{display:flex;gap:28px;flex-wrap:wrap}
+    .hero-stat-val{font-family:var(--font-display);font-size:1.55rem;font-weight:800}
+    .hero-stat-label{font-size:.75rem;color:var(--text-muted);margin-top:2px}
+    .hero-card{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+
+    /* ---- TICKER ---- */
+    .ticker-bar{background:var(--bg-card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:11px 0;overflow:hidden}
+    .ticker-track{display:flex;gap:40px;animation:ticker 28s linear infinite;width:max-content}
+    .ticker-track:hover{animation-play-state:paused}
+    @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+    .ticker-item{display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:600;white-space:nowrap}
+    .up{color:var(--success)}.down{color:var(--danger)}
+
+    /* ---- SECTIONS ---- */
+    section.sec{padding:72px 0}
+    .sec-label{font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:8px}
+    .sec-title{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;margin-bottom:12px}
+    .sec-desc{color:var(--text-secondary);font-size:.95rem;max-width:520px}
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px}
+    .feat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;transition:all .3s ease}
+    .feat-card:hover{border-color:var(--border-light);transform:translateY(-3px)}
+    .feat-icon{width:46px;height:46px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:14px}
+    .feat-title{font-family:var(--font-display);font-weight:700;font-size:.95rem;margin-bottom:7px}
+    .feat-desc{font-size:.845rem;color:var(--text-secondary);line-height:1.6}
+    .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:44px}
+    .step{text-align:center;padding:20px}
+    .step-num{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gold));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:1rem;color:#fff;margin:0 auto 14px}
+    .step-title{font-family:var(--font-display);font-weight:700;font-size:.9rem;margin-bottom:7px}
+    .step-desc{font-size:.82rem;color:var(--text-secondary)}
+    .trust-bar{display:flex;align-items:center;justify-content:center;gap:36px;flex-wrap:wrap;padding:28px 0;border-top:1px solid var(--border);margin-top:50px}
+    .trust-item{display:flex;align-items:center;gap:7px;font-size:.8rem;color:var(--text-muted)}
+    .trust-item span{color:var(--primary);font-size:1rem}
+
+    /* ---- ABOUT SECTION ---- */
+    .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+    .about-visual{position:relative}
+    .about-visual-card{background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:32px;text-align:center}
+    .about-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}
+    .about-stat{background:var(--bg-input);border-radius:var(--radius-md);padding:16px;text-align:center}
+    .about-stat-val{font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--primary)}
+    .about-stat-lbl{font-size:.72rem;color:var(--text-muted);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+    .team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:32px}
+    .team-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center}
+    .team-avatar{width:72px;height:72px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:linear-gradient(135deg,var(--primary),var(--accent))}
+    .team-name{font-family:var(--font-display);font-weight:700;font-size:.9rem;margin-bottom:4px}
+    .team-role{font-size:.78rem;color:var(--primary);font-weight:600;margin-bottom:6px}
+    .team-bio{font-size:.78rem;color:var(--text-secondary);line-height:1.5}
+
+    /* ---- PLANS SECTION ---- */
+    .plan-card{background:var(--bg-card);border:2px solid var(--border);border-radius:var(--radius-xl);padding:28px;transition:all .3s}
+    .plan-card:hover{border-color:var(--plan-color,var(--primary));transform:translateY(-4px)}
+    .plan-badge{display:inline-block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:4px 12px;border-radius:100px;border:1px solid var(--plan-color,var(--primary));color:var(--plan-color,var(--primary));margin-bottom:12px}
+    .plan-roi{font-family:var(--font-display);font-size:3rem;font-weight:800;color:var(--plan-color,var(--primary));line-height:1}
+    .plan-roi span{font-size:1.1rem}
+    .plan-range{display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-secondary);padding:10px 12px;background:var(--bg-input);border-radius:var(--radius-md);margin:16px 0}
+    .plan-features{list-style:none;margin-bottom:22px}
+    .plan-features li{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--text-secondary);padding:5px 0}
+    .plan-features li .check{color:var(--plan-color,var(--primary));font-weight:700}
+    .btn-full{display:block;width:100%;text-align:center;padding:12px;border-radius:var(--radius-md);font-weight:600;text-decoration:none;transition:all .2s}
+    .btn-gold{background:linear-gradient(135deg,var(--gold),#cc9900);color:#1a1000;font-weight:700}
+    .btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,215,0,.3);color:#1a1000}
+
+    /* ---- FOOTER ---- */
+    footer{background:var(--bg-card);border-top:1px solid var(--border);padding:44px 0 20px}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:36px;margin-bottom:36px}
+    .footer-brand-desc{color:var(--text-secondary);font-size:.845rem;margin-top:10px;line-height:1.6;max-width:260px}
+    .footer-col-title{font-family:var(--font-display);font-weight:700;font-size:.82rem;margin-bottom:12px;color:var(--text-primary)}
+    .footer-links{list-style:none;display:flex;flex-direction:column;gap:7px}
+    .footer-links a{font-size:.82rem;color:var(--text-secondary);transition:color var(--transition)}
+    .footer-links a:hover{color:var(--primary)}
+    .footer-bottom{border-top:1px solid var(--border);padding-top:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    .footer-bottom p{font-size:.76rem;color:var(--text-muted)}
+    /* Progress */
+    .progress{height:6px;background:var(--bg-input);border-radius:100px;overflow:hidden}
+    .progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:100px}
+    /* Badge */
+    .badge-active{background:rgba(46,213,115,.1);color:var(--success);font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:100px;border:1px solid rgba(46,213,115,.2)}
+    /* Loading */
+    .loading-block{display:flex;justify-content:center;padding:40px;grid-column:1/-1}
+    .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Mobile nav */
+    .mobile-nav{display:none;flex-direction:column;gap:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;position:absolute;top:76px;left:16px;right:16px;z-index:800;box-shadow:var(--shadow-lg)}
+    .mobile-nav.open{display:flex}
+    .mobile-nav a,.mobile-nav .mobile-dd-trigger{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--radius-md);color:var(--text-secondary);font-size:.9rem;text-decoration:none;cursor:pointer;background:none;border:none;font-family:var(--font-body);width:100%}
+    .mobile-nav a:hover,.mobile-nav .mobile-dd-trigger:hover{background:var(--bg-input);color:var(--text-white)}
+    .mobile-sub{display:none;flex-direction:column;gap:2px;padding-left:12px}
+    .mobile-sub.open{display:flex}
+    .mobile-sub a{font-size:.84rem;padding:8px 12px}
+
+    @media(max-width:900px){.features-grid,.steps{grid-template-columns:repeat(2,1fr)}.footer-grid{grid-template-columns:1fr 1fr}.about-grid,.team-grid{grid-template-columns:1fr}.navbar-nav,.navbar-actions{display:none}.nav-hamburger{display:flex}}
+    @media(max-width:600px){.features-grid,.steps,.footer-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<!-- GOOGLE TRANSLATE -->
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+  <a href="/" class="navbar-brand"><img src="/img/logo.svg" alt="Logo" style="width:34px;height:34px;border-radius:8px;margin-right:10px;vertical-align:middle"> <span style="font-family:Manrope,Inter,sans-serif;font-weight:800;color:#fff">TransAtlantia <span style="color:#0094FF">Trades</span></span></a>
+
+  <!-- Desktop nav -->
+  <ul class="navbar-nav">
+    <li><a href="#features">Features</a></li>
+
+    <!-- STOCKS DROPDOWN -->
+    <li class="nav-dropdown-wrap">
+      <button class="nav-trigger">Stocks <span class="nav-caret">▾</span></button>
+      <div class="nav-dropdown">
+        <a href="/stocks/swing-trading.html">
+          <div class="dd-icon" style="background:rgba(0,148,255,.12)">📈</div>
+          <div class="dd-text"><strong>Swing Trading</strong><span>Ride short-term market waves</span></div>
+        </a>
+        <a href="/stocks/futures.html">
+          <div class="dd-icon" style="background:rgba(255,215,0,.12)">⚡</div>
+          <div class="dd-text"><strong>Futures Trading</strong><span>Leverage & high-velocity contracts</span></div>
+        </a>
+        <a href="/stocks/options.html">
+          <div class="dd-icon" style="background:rgba(0,212,170,.12)">🎯</div>
+          <div class="dd-text"><strong>Options Trading</strong><span>Strategic rights without obligation</span></div>
+        </a>
+      </div>
+    </li>
+
+    <li><a href="/mirror-trading.html">Mirror Trading</a></li>
+    <li><a href="#plans">Plans</a></li>
+    <li><a href="#about">About Us</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+  </ul>
+
+  <div class="navbar-actions">
+    <!-- Translate trigger -->
+    <div class="gt-container">
+      🌐
+      <div id="google_translate_element2"></div>
+    </div>
+    <a href="/login.html" class="btn btn-outline btn-sm">Login</a>
+    <a href="/register.html" class="btn btn-primary btn-sm">Get Started</a>
+  </div>
+
+  <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()">☰</button>
+</nav>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobileNav">
+  <a href="#features" onclick="closeMobileNav()">Features</a>
+  <button class="mobile-dd-trigger" onclick="toggleMobileSub('stocksSub')">📈 Stocks <span>▾</span></button>
+  <div class="mobile-sub" id="stocksSub">
+    <a href="/stocks/swing-trading.html">↳ Swing Trading</a>
+    <a href="/stocks/futures.html">↳ Futures Trading</a>
+    <a href="/stocks/options.html">↳ Options Trading</a>
+  </div>
+  <a href="/mirror-trading.html">Mirror Trading</a>
+  <a href="#plans" onclick="closeMobileNav()">Plans</a>
+  <a href="#about" onclick="closeMobileNav()">About Us</a>
+  <a href="#how-it-works" onclick="closeMobileNav()">How It Works</a>
+  <a href="/login.html">Login</a>
+  <a href="/register.html" style="color:var(--primary);font-weight:600">→ Get Started</a>
+</div>
+
+<!-- TICKER -->
+<div class="ticker-bar" style="margin-top:68px">
+  <div class="ticker-track">
+    <div class="ticker-item">BTC/USD <span class="up">▲ $67,420 +2.34%</span></div>
+    <div class="ticker-item">ETH/USD <span class="up">▲ $3,512 +1.89%</span></div>
+    <div class="ticker-item">USDT <span class="up">▲ $1.0001 +0.01%</span></div>
+    <div class="ticker-item">BNB/USD <span class="down">▼ $378 -0.54%</span></div>
+    <div class="ticker-item">SOL/USD <span class="up">▲ $168 +3.12%</span></div>
+    <div class="ticker-item">XRP/USD <span class="down">▼ $0.618 -1.20%</span></div>
+    <div class="ticker-item">AAPL <span class="up">▲ $189.30 +0.92%</span></div>
+    <div class="ticker-item">TSLA <span class="down">▼ $242.10 -1.44%</span></div>
+    <div class="ticker-item">NVDA <span class="up">▲ $875.60 +2.11%</span></div>
+    <div class="ticker-item">S&P 500 <span class="up">▲ 5,248 +0.63%</span></div>
+    <div class="ticker-item">GOLD <span class="up">▲ $2,340 +0.87%</span></div>
+    <div class="ticker-item">BTC/USD <span class="up">▲ $67,420 +2.34%</span></div>
+    <div class="ticker-item">ETH/USD <span class="up">▲ $3,512 +1.89%</span></div>
+    <div class="ticker-item">USDT <span class="up">▲ $1.0001 +0.01%</span></div>
+    <div class="ticker-item">BNB/USD <span class="down">▼ $378 -0.54%</span></div>
+    <div class="ticker-item">SOL/USD <span class="up">▲ $168 +3.12%</span></div>
+    <div class="ticker-item">XRP/USD <span class="down">▼ $0.618 -1.20%</span></div>
+    <div class="ticker-item">AAPL <span class="up">▲ $189.30 +0.92%</span></div>
+    <div class="ticker-item">TSLA <span class="down">▼ $242.10 -1.44%</span></div>
+    <div class="ticker-item">NVDA <span class="up">▲ $875.60 +2.11%</span></div>
+    <div class="ticker-item">S&P 500 <span class="up">▲ 5,248 +0.63%</span></div>
+    <div class="ticker-item">GOLD <span class="up">▲ $2,340 +0.87%</span></div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div><div class="hero-grid"></div>
+  <div class="container">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center">
+      <div class="hero-content">
+        <div class="eyebrow">Live Trading Platform</div>
+        <h1>Trade Smarter,<br>Earn <em>Consistently.</em></h1>
+        <p class="hero-desc">Join thousands of investors growing their wealth with TransAtlantia's professional trading platform. Transparent returns. Secure infrastructure. Daily profits.</p>
+        <div class="hero-actions">
+          <a href="/register.html" class="btn btn-primary btn-lg">Start Investing</a>
+          <a href="#plans" class="btn btn-outline btn-lg">View Plans</a>
+        </div>
+        <div class="hero-stats">
+          <div><div class="hero-stat-val">$12.4M+</div><div class="hero-stat-label">Under Management</div></div>
+          <div><div class="hero-stat-val">8,400+</div><div class="hero-stat-label">Active Investors</div></div>
+          <div><div class="hero-stat-val">99.6%</div><div class="hero-stat-label">Payout Rate</div></div>
+        </div>
+      </div>
+      <div style="position:relative">
+        <div class="hero-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+            <span style="font-size:.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em">Portfolio Overview</span>
+            <span class="badge-active">● Live</span>
+          </div>
+          <div style="font-family:var(--font-display);font-size:1.9rem;font-weight:800;margin-bottom:4px">$24,850.00</div>
+          <div style="font-size:.8rem;color:var(--success);margin-bottom:18px">▲ +$1,240.50 today (+5.2%)</div>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text-muted);margin-bottom:5px"><span>Gold Plan Progress</span><span>68%</span></div>
+            <div class="progress"><div class="progress-bar" style="width:68%"></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div style="background:var(--bg-base);border-radius:var(--radius-sm);padding:9px;text-align:center"><div style="font-size:.62rem;color:var(--text-muted);margin-bottom:3px">Daily ROI</div><div style="font-family:var(--font-display);font-weight:700;color:var(--gold);font-size:.95rem">6.5%</div></div>
+            <div style="background:var(--bg-base);border-radius:var(--radius-sm);padding:9px;text-align:center"><div style="font-size:.62rem;color:var(--text-muted);margin-bottom:3px">Days Left</div><div style="font-family:var(--font-display);font-weight:700;color:var(--primary);font-size:.95rem">19</div></div>
+            <div style="background:var(--bg-base);border-radius:var(--radius-sm);padding:9px;text-align:center"><div style="font-size:.62rem;color:var(--text-muted);margin-bottom:3px">Earned</div><div style="font-family:var(--font-display);font-weight:700;color:var(--success);font-size:.95rem">$4,550</div></div>
+          </div>
+        </div>
+        <div style="position:absolute;bottom:-16px;left:-16px;background:var(--bg-card);border:1px solid rgba(34,197,94,.3);border-radius:var(--radius-md);padding:10px 14px;display:flex;align-items:center;gap:9px;box-shadow:var(--shadow-md)">
+          <span>💰</span>
+          <div><div style="font-size:.72rem;font-weight:600;color:var(--success)">Daily Profit Credited</div><div style="font-size:.68rem;color:var(--text-muted)">+$1,625.00 added</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec" id="features">
+  <div class="container">
+    <p class="sec-label">Why Choose Us</p>
+    <h2 class="sec-title">Everything you need to grow your wealth.</h2>
+    <p class="sec-desc">Professional-grade tools designed for both beginner and experienced investors.</p>
+    <div class="features-grid">
+      <div class="feat-card"><div class="feat-icon" style="background:rgba(0,148,255,.1);color:var(--primary)">🔒</div><div class="feat-title">Bank-Grade Security</div><p class="feat-desc">Multi-layer security protocols, cold storage, and real-time monitoring protect your funds.</p></div>
+      <div class="feat-card"><div class="feat-icon" style="background:rgba(245,184,0,.1);color:var(--gold)">📈</div><div class="feat-title">Daily Profit Returns</div><p class="feat-desc">Earn consistent daily ROI of 2.5%–6.5% credited directly to your withdrawable balance every 24 hours.</p></div>
+      <div class="feat-card"><div class="feat-icon" style="background:rgba(34,197,94,.1);color:var(--success)">⚡</div><div class="feat-title">Fast Withdrawals</div><p class="feat-desc">Request withdrawals anytime. Processed within 24 hours via BTC, ETH, or USDT TRC20.</p></div>
+      <div class="feat-card"><div class="feat-icon" style="background:rgba(168,85,247,.1);color:#a855f7">🌐</div><div class="feat-title">Crypto Deposits</div><p class="feat-desc">Fund your account instantly using Bitcoin, Ethereum, or USDT TRC20. No fiat complications.</p></div>
+      <div class="feat-card"><div class="feat-icon" style="background:rgba(239,68,68,.1);color:var(--danger)">👥</div><div class="feat-title">Referral Program</div><p class="feat-desc">Earn a 5% bonus on every deposit made by users you refer. Unlimited earning potential.</p></div>
+      <div class="feat-card"><div class="feat-icon" style="background:rgba(0,148,255,.1);color:var(--primary)">📊</div><div class="feat-title">Mirror Trading</div><p class="feat-desc">Automatically replicate the strategies of our top-performing expert traders in real time.</p></div>
+    </div>
+    <div class="trust-bar">
+      <div class="trust-item"><span>🛡️</span> SSL Encrypted</div>
+      <div class="trust-item"><span>✅</span> KYC Verified</div>
+      <div class="trust-item"><span>🔐</span> Cold Storage</div>
+      <div class="trust-item"><span>📞</span> 24/7 Support</div>
+      <div class="trust-item"><span>⚡</span> Instant Deposits</div>
+      <div class="trust-item"><span>🌍</span> Global Access</div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANS -->
+<section class="sec" id="plans" style="background:var(--bg-card);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="container">
+    <div class="text-center mb-4">
+      <p class="sec-label">Investment Plans</p>
+      <h2 class="sec-title">Choose your growth tier</h2>
+      <p class="sec-desc" style="margin:0 auto">From beginner-friendly entry points to premium high-yield plans.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:32px" id="plansContainer">
+      <div class="loading-block"><div class="spinner"></div></div>
+    </div>
+    <div class="text-center mt-4"><a href="/register.html" class="btn btn-gold btn-lg">Start Investing Today →</a></div>
+  </div>
+</section>
+
+<!-- ABOUT US -->
+<section class="sec" id="about">
+  <div class="container">
+    <div class="about-grid">
+      <div>
+        <p class="sec-label">About TransAtlantia</p>
+        <h2 class="sec-title">Built by traders,<br>for investors.</h2>
+        <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:20px">TransAtlantia Trades was founded in 2019 by a team of veteran algorithmic traders and fintech engineers who believed that institutional-grade investment returns should be accessible to everyone — not just Wall Street.</p>
+        <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:28px">Our proprietary trading engine operates across crypto, equities, futures, and options markets 24/7 — executing thousands of trades daily to deliver consistent, transparent returns to our investors.</p>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:flex-start;gap:12px"><span style="color:var(--primary);font-size:1.2rem;margin-top:2px">✦</span><div><strong style="font-size:.9rem">Fully Transparent Operations</strong><p style="font-size:.83rem;color:var(--text-secondary);margin-top:3px">Every transaction is logged, every profit is traceable. No hidden fees, no surprises.</p></div></div>
+          <div style="display:flex;align-items:flex-start;gap:12px"><span style="color:var(--gold);font-size:1.2rem;margin-top:2px">✦</span><div><strong style="font-size:.9rem">Expert Risk Management</strong><p style="font-size:.83rem;color:var(--text-secondary);margin-top:3px">Multi-strategy diversification across asset classes ensures your capital is always protected.</p></div></div>
+          <div style="display:flex;align-items:flex-start;gap:12px"><span style="color:var(--accent);font-size:1.2rem;margin-top:2px">✦</span><div><strong style="font-size:.9rem">Global Investor Community</strong><p style="font-size:.83rem;color:var(--text-secondary);margin-top:3px">Over 8,400 active investors across 60+ countries trust TransAtlantia with their portfolios.</p></div></div>
+        </div>
+        <div style="margin-top:32px"><a href="/register.html" class="btn btn-primary">Join Us Today →</a></div>
+      </div>
+      <div class="about-visual">
+        <div class="about-visual-card">
+          <div style="font-size:3rem;margin-bottom:12px">🏛️</div>
+          <h3 style="font-size:1.2rem;margin-bottom:8px">TransAtlantia Trades</h3>
+          <p style="font-size:.83rem;color:var(--text-secondary)">52 East 14th Street, New York, NY 10003</p>
+          <div class="about-stat-row">
+            <div class="about-stat"><div class="about-stat-val">2019</div><div class="about-stat-lbl">Founded</div></div>
+            <div class="about-stat"><div class="about-stat-val">60+</div><div class="about-stat-lbl">Countries</div></div>
+            <div class="about-stat"><div class="about-stat-val">$12.4M</div><div class="about-stat-lbl">AUM</div></div>
+            <div class="about-stat"><div class="about-stat-val">99.6%</div><div class="about-stat-lbl">Uptime</div></div>
+          </div>
+        </div>
+        <!-- Team -->
+        <div style="margin-top:24px">
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px">Our Leadership</h3>
+          <div class="team-grid">
+            <div class="team-card">
+              <div class="team-avatar" style="background:linear-gradient(135deg,#0094FF,#004db3)">👨‍💼</div>
+              <div class="team-name">Marcus Reed</div>
+              <div class="team-role">CEO & Co-Founder</div>
+              <div class="team-bio">15 years in algorithmic trading at Goldman Sachs and Citadel.</div>
+            </div>
+            <div class="team-card">
+              <div class="team-avatar" style="background:linear-gradient(135deg,#FFD700,#cc7700)">👩‍💻</div>
+              <div class="team-name">Sofia Chen</div>
+              <div class="team-role">CTO & Co-Founder</div>
+              <div class="team-bio">Ex-Google engineer. Built trading systems processing $2B+ daily.</div>
+            </div>
+            <div class="team-card">
+              <div class="team-avatar" style="background:linear-gradient(135deg,#00D4AA,#007755)">👨‍🔬</div>
+              <div class="team-name">David Okafor</div>
+              <div class="team-role">Head of Quant Research</div>
+              <div class="team-bio">PhD in Financial Mathematics. 200+ published trading strategies.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="sec" id="how-it-works" style="background:var(--bg-card);border-top:1px solid var(--border)">
+  <div class="container">
+    <div class="text-center mb-4">
+      <p class="sec-label">Simple Process</p>
+      <h2 class="sec-title">Get started in 4 steps</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">01</div><div class="step-title">Create Account</div><p class="step-desc">Register with your email in under 2 minutes.</p></div>
+      <div class="step"><div class="step-num">02</div><div class="step-title">Choose a Plan</div><p class="step-desc">Select the Starter, Silver, or Gold plan that matches your goals.</p></div>
+      <div class="step"><div class="step-num">03</div><div class="step-title">Deposit Funds</div><p class="step-desc">Send crypto and upload your payment proof for confirmation.</p></div>
+      <div class="step"><div class="step-num">04</div><div class="step-title">Earn Daily</div><p class="step-desc">Watch your balance grow every day. Withdraw anytime.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="/" class="navbar-brand" style="display:inline-flex;margin-bottom:10px"><img src="/img/logo.svg" style="width:28px;height:28px;border-radius:6px;vertical-align:middle;margin-right:8px"> TransAtlantia Trades</a>
+        <p class="footer-brand-desc">A professional investment platform delivering consistent daily returns through expert algorithmic trading across crypto, equities, and derivatives.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Trading</div>
+        <ul class="footer-links">
+          <li><a href="/stocks/swing-trading.html">Swing Trading</a></li>
+          <li><a href="/stocks/futures.html">Futures Trading</a></li>
+          <li><a href="/stocks/options.html">Options Trading</a></li>
+          <li><a href="/mirror-trading.html">Mirror Trading</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">
+          <li><a href="#about">About Us</a></li>
+          <li><a href="#plans">Investment Plans</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="/register.html">Get Started</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Support</div>
+        <ul class="footer-links">
+          <li><a href="mailto:support@transatlantiatrades.com">support@transatlantiatrades.com</a></li>
+          <li><a href="#">+1 (534) 228-3558</a></li>
+          <li><a href="/login.html">Login</a></li>
+          <li><a href="/register.html">Register</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 TransAtlantia Trades. All rights reserved.</p>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <a href="/terms.html" style="font-size:.76rem;color:var(--text-muted);text-decoration:none">Terms of Service</a>
+        <a href="/privacy.html" style="font-size:.76rem;color:var(--text-muted);text-decoration:none">Privacy Policy</a>
+        <span style="font-size:.76rem;color:var(--text-muted)">High-risk investments. Past performance does not guarantee future results.</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/utils.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+  // Google Translate second instance for navbar
+  function googleTranslateElementInit(){
+    new google.translate.TranslateElement({
+      pageLanguage:'en',
+      includedLanguages:'en,fr,es,de,pt,zh-CN,ar,ru,it,ja,ko,hi,sw,yo,ha,ig',
+      layout:google.translate.TranslateElement.InlineLayout.SIMPLE,
+      autoDisplay:false
+    },'google_translate_element2');
+  }
+
+  // Navbar scroll
+  window.addEventListener('scroll',()=>{
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // Mobile nav
+  function toggleMobileNav(){
+    document.getElementById('mobileNav').classList.toggle('open');
+  }
+  function closeMobileNav(){
+    document.getElementById('mobileNav').classList.remove('open');
+  }
+  function toggleMobileSub(id){
+    document.getElementById(id).classList.toggle('open');
+  }
+
+  // Load plans
+  async function loadPlans(){
+    try{
+      const res = await api.get('/plans');
+      const c = document.getElementById('plansContainer');
+      if(!res.success||!res.plans.length){c.innerHTML='<p style="color:var(--text-muted);text-align:center;grid-column:1/-1">No plans available</p>';return;}
+      c.innerHTML=res.plans.map((p,i)=>`
+        <div class="plan-card" style="--plan-color:${p.color_hex}">
+          <div class="plan-badge">${i===2?'👑':i===1?'⭐':'🌱'} ${p.name}</div>
+          <div class="plan-roi" style="color:${p.color_hex}">${p.roi_percent}<span>%/day</span></div>
+          <div style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 16px">${p.duration_days}-day plan</div>
+          <div class="plan-range"><div><div style="font-size:.65rem;color:var(--text-muted)">MIN</div><strong>$${parseFloat(p.min_amount).toLocaleString()}</strong></div><div style="text-align:right"><div style="font-size:.65rem;color:var(--text-muted)">MAX</div><strong>$${parseFloat(p.max_amount).toLocaleString()}</strong></div></div>
+          <ul class="plan-features">${(p.features||[]).map(f=>`<li><span class="check">✓</span> ${f}</li>`).join('')}</ul>
+          <a href="/register.html" class="btn-full" style="border:1px solid ${p.color_hex};color:${p.color_hex};background:${p.color_hex}15;padding:12px;border-radius:var(--radius-md);font-weight:600;text-align:center;display:block;text-decoration:none;transition:all .2s" onmouseover="this.style.background='${p.color_hex}'" onmouseout="this.style.background='${p.color_hex}15'">Get Started</a>
+        </div>`).join('');
+    }catch(e){document.getElementById('plansContainer').innerHTML='<p style="color:var(--text-muted);text-align:center;grid-column:1/-1">Unable to load plans</p>';}
+  }
+  loadPlans();
+</script>
+</body>
+</html>

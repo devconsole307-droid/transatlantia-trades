@@ -1,0 +1,89 @@
+# ============================================================
+# TransAtlantia Trades — Render Blueprint
+# Deploy everything in one click from Render dashboard
+# ============================================================
+
+services:
+
+  # ---- BACKEND (Node.js Web Service) ----
+  - type: web
+    name: transatlantia-trades-backend
+    runtime: node
+    region: oregon
+    plan: starter              # $7/month — no sleep, persistent disk
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    disk:
+      name: uploads
+      mountPath: /var/data/uploads
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transatlantia-trades-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true        # Render auto-generates a secure value
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: SITE_NAME
+        value: TransAtlantia Trades
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: EMAIL_FROM_NAME
+        value: TransAtlantia Trades
+      - key: BTC_WALLET
+        sync: false
+      - key: ETH_WALLET
+        sync: false
+      - key: USDT_TRC20_WALLET
+        sync: false
+
+  # ---- FRONTEND (Static Site) ----
+  - type: web
+    name: transatlantia-trades-frontend
+    runtime: static
+    rootDir: frontend
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://transatlantia-trades-backend.onrender.com/api/*
+      - type: rewrite
+        source: /socket.io/*
+        destination: https://transatlantia-trades-backend.onrender.com/socket.io/*
+      - type: rewrite
+        source: /uploads/*
+        destination: https://transatlantia-trades-backend.onrender.com/uploads/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+# ---- DATABASE ----
+databases:
+  - name: transatlantia-trades-db
+    plan: starter              # $7/month — no expiry, 10GB storage
+    region: oregon
+    postgresMajorVersion: 16

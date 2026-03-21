@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Transactions — Admin</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand" style="border-bottom:2px solid var(--danger)">
+      <div class="brand-logo" style="background:linear-gradient(135deg,var(--danger),#cc0000)">🛡</div>
+      <div><div class="brand-name">Admin Panel</div><div class="brand-sub">TransAtlantia Trades</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/admin/users.html" class="sidebar-link"><span class="nav-icon">👥</span> Users</a>
+      <a href="/admin/deposits.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposits</a>
+      <a href="/admin/withdrawals.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdrawals</a>
+      <a href="/admin/transactions.html" class="sidebar-link active"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/admin/plans.html" class="sidebar-link"><span class="nav-icon">📊</span> Plans</a>
+      <a href="/admin/chat.html" class="sidebar-link"><span class="nav-icon">💬</span> Live Chat</a>
+      <a href="/admin/settings.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Settings</a>
+      <a href="/admin/email-templates.html" class="sidebar-link"><span class="nav-icon">📧</span> Email Templates</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" style="background:var(--danger)">A</div><div class="user-info"><div class="user-name">Admin</div><div class="user-role" style="color:var(--danger)">Administrator</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>All Transactions</h1><p>Platform-wide transaction ledger</p></div>
+      <div class="topbar-actions">
+        <select class="form-control" id="typeFilter" style="width:auto;font-size:13px;padding:8px 12px" onchange="loadTx(1)">
+          <option value="">All Types</option>
+          <option value="deposit">Deposits</option>
+          <option value="withdrawal">Withdrawals</option>
+          <option value="profit">Profits</option>
+          <option value="referral_bonus">Referral Bonus</option>
+          <option value="manual_credit">Manual Credits</option>
+          <option value="manual_debit">Manual Debits</option>
+        </select>
+        <input type="text" class="form-control" id="searchUser" placeholder="Search by email..." style="width:200px;font-size:13px" oninput="searchDebounce()">
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>User</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Balance After</th>
+              </tr>
+            </thead>
+            <tbody id="txBody"><tr><td colspan="6" class="table-empty">Loading...</td></tr></tbody>
+          </table>
+        </div>
+        <div class="flex justify-between items-center mt-3 p-2">
+          <span id="txInfo" style="font-size:13px;color:var(--text-secondary)"></span>
+          <div class="flex gap-2" id="txPagination"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script>
+  if (!Auth.requireAdmin()) throw new Error();
+  UI.initSidebar();
+
+  let currentPage = 1, searchTimer = null;
+
+  const typeColors = { deposit:'success',withdrawal:'info',profit:'warning',referral_bonus:'success',manual_credit:'success',manual_debit:'danger' };
+  const typeLabels = { deposit:'Deposit',withdrawal:'Withdrawal',profit:'Profit',referral_bonus:'Referral Bonus',manual_credit:'Credit',manual_debit:'Debit' };
+
+  async function loadTx(page=1) {
+    currentPage = page;
+    const type = document.getElementById('typeFilter').value;
+    const search = document.getElementById('searchUser').value;
+    document.getElementById('txBody').innerHTML = '<tr><td colspan="6" class="table-empty"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+    try {
+      // Use admin users endpoint to find user then filter - for now use generic transaction view
+      // We'll query the admin transactions endpoint
+      const url = `/admin/transactions?page=${page}${type?'&type='+type:''}${search?'&search='+encodeURIComponent(search):''}`;
+      const res = await api.get(url);
+      if (!res.success) { document.getElementById('txBody').innerHTML = '<tr><td colspan="6" class="table-empty">No transactions found</td></tr>'; return; }
+
+      const { transactions, pagination } = res;
+      if (!transactions.length) {
+        document.getElementById('txBody').innerHTML = '<tr><td colspan="6" class="table-empty">No transactions found</td></tr>';
+        document.getElementById('txInfo').textContent = '';
+        document.getElementById('txPagination').innerHTML = '';
+        return;
+      }
+
+      document.getElementById('txBody').innerHTML = transactions.map(tx => {
+        const isCredit = ['deposit','profit','referral_bonus','manual_credit'].includes(tx.type);
+        return `<tr>
+          <td style="font-size:12px;white-space:nowrap">${fmt.datetime(tx.created_at)}</td>
+          <td>
+            <div style="font-size:13px;font-weight:600">${tx.first_name||''} ${tx.last_name||''}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${tx.email||''}</div>
+          </td>
+          <td><span class="badge badge-${typeColors[tx.type]||'muted'}">${typeLabels[tx.type]||tx.type}</span></td>
+          <td style="font-size:12px;color:var(--text-secondary);max-width:180px">${tx.description||'—'}</td>
+          <td><strong style="color:${isCredit?'var(--success)':'var(--danger)';}">${isCredit?'+':'-'}${fmt.money(tx.amount)}</strong></td>
+          <td style="font-size:13px">${tx.balance_after!=null?fmt.money(tx.balance_after):'—'}</td>
+        </tr>`;
+      }).join('');
+
+      if (pagination) {
+        const start = (page-1)*pagination.limit+1;
+        const end = Math.min(page*pagination.limit, pagination.total);
+        document.getElementById('txInfo').textContent = `Showing ${start}–${end} of ${pagination.total}`;
+        const btns = document.getElementById('txPagination');
+        btns.innerHTML = '';
+        const totalPages = Math.ceil(pagination.total/pagination.limit);
+        if (page>1) { const b=document.createElement('button');b.className='btn btn-outline btn-sm';b.textContent='← Prev';b.onclick=()=>loadTx(page-1);btns.appendChild(b); }
+        if (page<totalPages) { const b=document.createElement('button');b.className='btn btn-outline btn-sm';b.textContent='Next →';b.onclick=()=>loadTx(page+1);btns.appendChild(b); }
+      }
+    } catch(e) { document.getElementById('txBody').innerHTML = `<tr><td colspan="6" class="table-empty">Error loading transactions</td></tr>`; }
+  }
+
+  function searchDebounce() { clearTimeout(searchTimer); searchTimer = setTimeout(()=>loadTx(1), 400); }
+
+  loadTx(1);
+</script>
+
+<script>
+// Poll for unread chat messages and update badge
+async function updateChatBadge() {
+  try {
+    const res = await api.get('/chat/admin/unread');
+    const badge = document.getElementById('chatNavBadge');
+    if (badge) {
+      if (res.count > 0) { badge.style.display = 'inline-flex'; badge.textContent = res.count > 9 ? '9+' : res.count; }
+      else badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // Add badge span to chat link if not present
+  const chatLink = document.querySelector('a[href="/admin/chat.html"]');
+  if (chatLink && !chatLink.querySelector('#chatNavBadge')) {
+    const badge = document.createElement('span');
+    badge.id = 'chatNavBadge';
+    badge.style.cssText = 'display:none;background:#FF4757;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:100px;margin-left:auto;min-width:18px;text-align:center';
+    chatLink.appendChild(badge);
+  }
+  if (Auth.isAdmin()) { updateChatBadge(); setInterval(updateChatBadge, 20000); }
+});
+</script>
+</body>
+</html>

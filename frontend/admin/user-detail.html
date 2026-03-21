@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>User Detail — Admin</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .user-hero{background:linear-gradient(135deg,var(--bg-surface),var(--bg-card));border:1px solid var(--border);border-radius:var(--radius-xl);padding:28px;display:flex;align-items:center;gap:24px;margin-bottom:24px}
+    .user-big-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:1.6rem;color:#fff;flex-shrink:0}
+    .user-hero-info{flex:1}
+    .user-hero-name{font-family:var(--font-display);font-size:1.4rem;font-weight:800}
+    .user-hero-email{font-size:.875rem;color:var(--text-secondary);margin-top:3px}
+    .user-hero-meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
+    .user-hero-tag{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .kyc-doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:12px}
+    .kyc-doc-card{background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center;cursor:pointer;transition:all .2s}
+    .kyc-doc-card:hover{border-color:var(--primary);background:var(--primary-glow)}
+    .kyc-doc-icon{font-size:2rem;margin-bottom:8px}
+    .kyc-doc-label{font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em}
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand" style="border-bottom:2px solid var(--danger)">
+      <div class="brand-logo" style="background:linear-gradient(135deg,var(--danger),#cc0000)">🛡</div>
+      <div><div class="brand-name">Admin Panel</div><div class="brand-sub">TransAtlantia Trades</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/admin/users.html" class="sidebar-link"><span class="nav-icon">👥</span> Users</a>
+      <a href="/admin/deposits.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposits</a>
+      <a href="/admin/withdrawals.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdrawals</a>
+      <a href="/admin/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/admin/plans.html" class="sidebar-link"><span class="nav-icon">📊</span> Plans</a>
+      <a href="/admin/chat.html" class="sidebar-link"><span class="nav-icon">💬</span> Live Chat</a>
+      <a href="/admin/settings.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Settings</a>
+      <a href="/admin/email-templates.html" class="sidebar-link"><span class="nav-icon">📧</span> Email Templates</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" style="background:var(--danger)">A</div><div class="user-info"><div class="user-name">Admin</div><div class="user-role" style="color:var(--danger)">Administrator</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title">
+        <h1>User Detail</h1>
+        <p><a href="/admin/users.html" style="color:var(--primary)">← Back to Users</a></p>
+      </div>
+      <div class="topbar-actions" id="headerActions"></div>
+    </header>
+
+    <div class="page-content" id="pageContent">
+      <div style="text-align:center;padding:80px 0"><div class="spinner" style="margin:0 auto 16px"></div><p style="color:var(--text-muted)">Loading user...</p></div>
+    </div>
+  </main>
+</div>
+
+<!-- BALANCE MODAL -->
+<div class="modal-overlay" id="balanceModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><h3>Adjust Balance</h3><button class="modal-close" onclick="UI.closeModal('balanceModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select class="form-control" id="balType">
+          <option value="credit">Credit (Add funds)</option>
+          <option value="debit">Debit (Remove funds)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount ($)</label>
+        <div class="input-group"><span class="input-icon">$</span><input type="number" class="form-control" id="balAmount" min="0.01" step="0.01" placeholder="0.00"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason</label>
+        <input type="text" class="form-control" id="balDesc" placeholder="e.g. Bonus credit, correction...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="UI.closeModal('balanceModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="applyBalance()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script>
+  if (!Auth.requireAdmin()) throw new Error();
+  UI.initSidebar();
+
+  const params = new URLSearchParams(location.search);
+  const userId = params.get('id');
+  if (!userId) { window.location.href = '/admin/users.html'; }
+
+  let userData = null;
+
+  async function loadUser() {
+    try {
+      const res = await api.get('/admin/users/' + userId);
+      if (!res.success) { document.getElementById('pageContent').innerHTML = '<div class="alert alert-danger">User not found</div>'; return; }
+      userData = res.user;
+      renderPage(res);
+    } catch(e) {
+      document.getElementById('pageContent').innerHTML = '<div class="alert alert-danger">Failed to load user</div>';
+    }
+  }
+
+  function renderPage(res) {
+    const u = res.user;
+    const initials = ((u.first_name||'?')[0] + (u.last_name||'?')[0]).toUpperCase();
+
+    // Header actions
+    document.getElementById('headerActions').innerHTML = `
+      <button class="btn btn-outline btn-sm" onclick="UI.openModal('balanceModal')">💵 Adjust Balance</button>
+      <button class="btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-success'}" id="toggleBtn" onclick="toggleStatus()">
+        ${u.is_active ? '🚫 Suspend' : '✅ Activate'}
+      </button>
+    `;
+
+    // Main content
+    document.getElementById('pageContent').innerHTML = `
+      <!-- USER HERO -->
+      <div class="user-hero">
+        <div class="user-big-avatar">${initials}</div>
+        <div class="user-hero-info">
+          <div class="user-hero-name">${u.first_name} ${u.last_name}</div>
+          <div class="user-hero-email">${u.email}</div>
+          <div class="user-hero-meta">
+            <span class="user-hero-tag">📱 ${u.phone || 'No phone'}</span>
+            <span class="user-hero-tag">🌍 ${u.country || 'Unknown'}</span>
+            <span class="user-hero-tag">📅 Joined ${fmt.date(u.created_at)}</span>
+            <span class="user-hero-tag">🕐 Last login ${u.last_login ? fmt.timeAgo(u.last_login) : 'Never'}</span>
+            <span class="user-hero-tag">${fmt.badge(u.kyc_status)} KYC</span>
+            <span class="user-hero-tag"><span class="badge ${u.is_active ? 'badge-success' : 'badge-danger'}">${u.is_active ? 'Active' : 'Suspended'}</span></span>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Referral Code</div>
+          <div style="font-family:monospace;font-size:14px;font-weight:700;color:var(--primary)">${u.referral_code}</div>
+        </div>
+      </div>
+
+      <!-- BALANCE CARDS -->
+      <div class="stats-grid mb-3">
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(46,213,115,.15)">💵</div><div><div class="stat-label">Withdrawable</div><div class="stat-value text-success">${fmt.money(u.withdrawable_balance||0)}</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(0,148,255,.15)">💼</div><div><div class="stat-label">Active Investment</div><div class="stat-value">${fmt.money(u.active_investment||0)}</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(255,215,0,.15)">📈</div><div><div class="stat-label">Total Earnings</div><div class="stat-value text-gold">${fmt.money(u.total_earnings||0)}</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(122,139,168,.15)">📤</div><div><div class="stat-label">Total Withdrawn</div><div class="stat-value">${fmt.money(u.total_withdrawn||0)}</div></div></div>
+      </div>
+
+      <div class="detail-grid">
+        <!-- INVESTMENTS -->
+        <div class="card">
+          <div class="card-header"><h3>Investments</h3></div>
+          ${!res.investments.length ? '<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px 0">No investments</p>' :
+            res.investments.map(inv => `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+                <div>
+                  <div style="font-weight:600;font-size:13px">${inv.plan_name}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">${fmt.date(inv.started_at)} → ${fmt.date(inv.ends_at)}</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-weight:700;font-size:13px">${fmt.money(inv.amount)}</div>
+                  <div>${fmt.badge(inv.status)}</div>
+                </div>
+              </div>`).join('')
+          }
+        </div>
+
+        <!-- KYC DOCUMENTS -->
+        <div class="card">
+          <div class="card-header">
+            <h3>KYC Documents</h3>
+            <div style="display:flex;gap:8px">
+              ${u.kyc_status === 'submitted' ? `
+                <button class="btn btn-success btn-sm" onclick="updateKyc('approved')">✓ Approve</button>
+                <button class="btn btn-danger btn-sm" onclick="updateKyc('rejected')">✗ Reject</button>` : ''}
+            </div>
+          </div>
+          <div id="kycDocsArea"><p style="color:var(--text-muted);font-size:13px">Loading docs...</p></div>
+        </div>
+      </div>
+
+      <!-- RECENT DEPOSITS -->
+      <div class="card mt-3">
+        <div class="card-header"><h3>Deposit History</h3><a href="/admin/deposits.html" style="font-size:12px;color:var(--primary)">View All</a></div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Amount</th><th>Currency</th><th>Plan</th><th>TXID</th><th>Proof</th><th>Status</th></tr></thead>
+            <tbody>${!res.deposits.length ? '<tr><td colspan="7" class="table-empty">No deposits</td></tr>' :
+              res.deposits.map(d => `<tr>
+                <td style="font-size:12px">${fmt.date(d.created_at)}</td>
+                <td><strong>${fmt.money(d.amount)}</strong></td>
+                <td style="font-size:12px;font-family:monospace">${d.currency}</td>
+                <td style="font-size:12px">${d.plan_name||'—'}</td>
+                <td style="font-size:11px;font-family:monospace;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.txid||'—'}</td>
+                <td>${d.proof_file ? `<a href="/uploads/proofs/${d.proof_file}" target="_blank" class="btn btn-outline btn-sm">View</a>` : '—'}</td>
+                <td>${fmt.badge(d.status)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RECENT WITHDRAWALS -->
+      <div class="card mt-3">
+        <div class="card-header"><h3>Withdrawal History</h3></div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Amount</th><th>Currency</th><th>Wallet</th><th>Status</th></tr></thead>
+            <tbody>${!res.withdrawals.length ? '<tr><td colspan="5" class="table-empty">No withdrawals</td></tr>' :
+              res.withdrawals.map(w => `<tr>
+                <td style="font-size:12px">${fmt.date(w.created_at)}</td>
+                <td><strong>${fmt.money(w.amount)}</strong></td>
+                <td style="font-size:12px;font-family:monospace">${w.currency}</td>
+                <td style="font-size:11px;font-family:monospace;max-width:120px;overflow:hidden;text-overflow:ellipsis" title="${w.wallet_address}">${w.wallet_address}</td>
+                <td>${fmt.badge(w.status)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    loadKycDocs();
+  }
+
+  async function loadKycDocs() {
+    try {
+      const res = await api.get('/admin/users/' + userId + '/kyc-docs');
+      const area = document.getElementById('kycDocsArea');
+      if (!res.docs || !res.docs.length) {
+        area.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px 0">No documents submitted</p>';
+        return;
+      }
+      const docLabels = { id_front:'ID Front', id_back:'ID Back', passport:'Passport', proof_of_address:'Proof of Address', selfie:'Selfie' };
+      const docIcons = { id_front:'🪪', id_back:'🪪', passport:'📘', proof_of_address:'🏠', selfie:'🤳' };
+      area.innerHTML = `<div class="kyc-doc-grid">${res.docs.map(doc => `
+        <a href="/uploads/kyc/${doc.file_path}" target="_blank" class="kyc-doc-card" style="text-decoration:none">
+          <div class="kyc-doc-icon">${docIcons[doc.doc_type]||'📄'}</div>
+          <div class="kyc-doc-label">${docLabels[doc.doc_type]||doc.doc_type}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${fmt.badge(doc.status)}</div>
+        </a>`).join('')}</div>`;
+    } catch(e) {
+      document.getElementById('kycDocsArea').innerHTML = '<p style="color:var(--text-muted);font-size:13px">Could not load documents</p>';
+    }
+  }
+
+  async function toggleStatus() {
+    try {
+      const res = await api.patch('/admin/users/' + userId + '/toggle-status');
+      if (res.success) { Toast.success(`User ${res.user.is_active ? 'activated' : 'suspended'}`); loadUser(); }
+      else Toast.error(res.message || 'Failed');
+    } catch(e) { Toast.error('Error'); }
+  }
+
+  async function updateKyc(status) {
+    if (!confirm(`${status === 'approved' ? 'Approve' : 'Reject'} KYC for this user?`)) return;
+    try {
+      const res = await api.patch('/admin/users/' + userId + '/kyc', { status });
+      if (res.success) { Toast.success(`KYC ${status}`); loadUser(); }
+      else Toast.error(res.message || 'Failed');
+    } catch(e) { Toast.error('Error'); }
+  }
+
+  async function applyBalance() {
+    const amount = document.getElementById('balAmount').value;
+    const type = document.getElementById('balType').value;
+    const desc = document.getElementById('balDesc').value;
+    if (!amount || parseFloat(amount) <= 0) { Toast.error('Enter valid amount'); return; }
+    if (!desc.trim()) { Toast.error('Enter a reason'); return; }
+    try {
+      const res = await api.post('/admin/users/' + userId + '/adjust-balance', { amount: parseFloat(amount), type, description: desc });
+      if (res.success) { Toast.success('Balance adjusted!'); UI.closeModal('balanceModal'); loadUser(); }
+      else Toast.error(res.message || 'Failed');
+    } catch(e) { Toast.error('Error'); }
+  }
+
+  loadUser();
+</script>
+
+<script>
+async function updateChatBadge() {
+  try {
+    const res = await api.get('/chat/admin/unread');
+    const badge = document.getElementById('chatNavBadge');
+    if (badge) {
+      if (res.count > 0) { badge.style.display = 'inline-flex'; badge.textContent = res.count > 9 ? '9+' : res.count; }
+      else badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const chatLink = document.querySelector('a[href="/admin/chat.html"]');
+  if (chatLink && !chatLink.querySelector('#chatNavBadge')) {
+    const badge = document.createElement('span');
+    badge.id = 'chatNavBadge';
+    badge.style.cssText = 'display:none;background:#FF4757;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:100px;margin-left:auto;min-width:18px;text-align:center';
+    chatLink.appendChild(badge);
+  }
+  if (Auth.isAdmin()) { updateChatBadge(); setInterval(updateChatBadge, 20000); }
+});
+</script>
+</body>
+</html>

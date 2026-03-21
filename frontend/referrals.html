@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Referrals — TransAtlantia Trades</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="/img/logo.svg" alt="TransAtlantia" style="width:36px;height:36px;border-radius:8px;flex-shrink:0">
+      <div>
+        <div class="brand-name">TransAtlantia</div>
+        <div class="brand-sub">Trades</div>
+      </div>
+    </div></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/deposit.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposit</a>
+      <a href="/investments.html" class="sidebar-link"><span class="nav-icon">📈</span> Investments</a>
+      <a href="/withdraw.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdraw</a>
+      <a href="/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/referrals.html" class="sidebar-link active"><span class="nav-icon">👥</span> Referrals</a>
+      <a href="/kyc.html" class="sidebar-link"><span class="nav-icon">🪪</span> KYC</a>
+      <a href="/profile.html" class="sidebar-link"><span class="nav-icon">👤</span> Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" id="sidebarUserAvatar">?</div><div class="user-info"><div id="sidebarUserName" class="user-name">—</div><div id="sidebarUserEmail" class="user-role">—</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>Referral Program</h1><p>Earn bonus commissions by inviting friends</p></div>
+    </header>
+
+    <div class="page-content">
+
+      <div class="stats-grid stagger mb-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(0,148,255,0.15)">👥</div>
+          <div><div class="stat-label">Total Referrals</div><div class="stat-value" id="statReferralCount">0</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(46,213,115,0.15)">💵</div>
+          <div><div class="stat-label">Total Earned</div><div class="stat-value text-success" id="statReferralEarnings">$0.00</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(255,215,0,0.15)">🎯</div>
+          <div><div class="stat-label">Commission Rate</div><div class="stat-value text-gold" id="statReferralRate">5%</div></div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header"><h3>Your Referral Link</h3></div>
+        <p class="text-muted mb-2" style="font-size:14px">Share this link. When someone signs up and makes their first deposit, you earn a commission automatically.</p>
+        <div class="wallet-display">
+          <span id="referralLink" style="font-family:var(--font-body);font-size:13px">Loading...</span>
+          <button class="copy-btn" id="copyRefBtn" onclick="copyRefLink()">📋 Copy Link</button>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button class="btn btn-outline btn-sm" onclick="shareLink('whatsapp')">📱 WhatsApp</button>
+          <button class="btn btn-outline btn-sm" onclick="shareLink('telegram')">✈️ Telegram</button>
+          <button class="btn btn-outline btn-sm" onclick="shareLink('email')">📧 Email</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>Referred Users</h3></div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Name</th><th>Joined</th><th>Total Deposited</th></tr></thead>
+            <tbody id="referralsTable"><tr><td colspan="3" class="table-empty">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error();
+  UI.initSidebar();
+  UI.populateSidebarUser();
+
+  let refLink = '';
+
+  async function loadReferrals() {
+    try {
+      const res = await api.get('/user/referrals');
+      if (!res.success) return;
+      refLink = res.referral_link;
+      document.getElementById('referralLink').textContent = refLink;
+      document.getElementById('statReferralRate').textContent = res.referral_percent + '%';
+
+      const countEl = document.getElementById('statReferralCount');
+      const earningsEl = document.getElementById('statReferralEarnings');
+
+      const users = res.referred_users || [];
+      const earnings = res.earnings || [];
+      countEl.textContent = users.length;
+      const total = earnings.reduce((s,e)=>s+parseFloat(e.amount),0);
+      earningsEl.textContent = fmt.money(total);
+
+      const tbody = document.getElementById('referralsTable');
+      if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="table-empty">No referrals yet. Share your link to get started!</td></tr>';
+      } else {
+        tbody.innerHTML = users.map(u=>`
+          <tr>
+            <td>${u.first_name} ${u.last_name}</td>
+            <td>${fmt.date(u.created_at)}</td>
+            <td><strong>${fmt.money(u.total_deposited)}</strong></td>
+          </tr>
+        `).join('');
+      }
+    } catch(e) { Toast.error('Failed to load referrals'); }
+  }
+
+  function copyRefLink() {
+    UI.copyText(refLink);
+    const btn = document.getElementById('copyRefBtn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(()=>btn.textContent='📋 Copy Link', 2000);
+  }
+
+  function shareLink(platform) {
+    const text = encodeURIComponent('Join TransAtlantia Trades and start earning daily returns! Use my referral link: ' + refLink);
+    const urls = {
+      whatsapp: 'https://wa.me/?text=' + text,
+      telegram: 'https://t.me/share/url?url=' + encodeURIComponent(refLink) + '&text=Join+TransAtlantia+Trades',
+      email: 'mailto:?subject=Investment+Opportunity&body=' + text
+    };
+    window.open(urls[platform], '_blank');
+  }
+
+  loadReferrals();
+</script>
+</body>
+</html>

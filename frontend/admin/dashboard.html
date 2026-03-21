@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Admin Dashboard — TransAtlantia Trades</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand" style="border-bottom:2px solid var(--danger)">
+      <div class="brand-logo" style="background:linear-gradient(135deg,var(--danger),#cc0000)">🛡</div>
+      <div><div class="brand-name">Admin Panel</div><div class="brand-sub">TransAtlantia Trades</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="sidebar-link active"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/admin/users.html" class="sidebar-link"><span class="nav-icon">👥</span> Users</a>
+      <a href="/admin/deposits.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposits</a>
+      <a href="/admin/withdrawals.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdrawals</a>
+      <a href="/admin/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/admin/plans.html" class="sidebar-link"><span class="nav-icon">📊</span> Plans</a>
+      <a href="/admin/chat.html" class="sidebar-link"><span class="nav-icon">💬</span> Live Chat</a>
+      <a href="/admin/settings.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Settings</a>
+      <a href="/admin/email-templates.html" class="sidebar-link"><span class="nav-icon">📧</span> Email Templates</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" style="background:var(--danger)" id="sidebarUserAvatar">A</div>
+        <div class="user-info"><div id="sidebarUserName" class="user-name">Admin</div><div class="user-role" style="color:var(--danger)">Administrator</div></div>
+      </div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>Admin Dashboard</h1><p id="lastRefresh">Loading...</p></div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="loadDashboard()">🔄 Refresh</button>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="stats-grid stagger" id="statsGrid">
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(0,148,255,0.15)">👥</div><div><div class="stat-label">Total Users</div><div class="stat-value" id="statUsers">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(46,213,115,0.15)">📈</div><div><div class="stat-label">Total Deposited</div><div class="stat-value text-success" id="statDeposited">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(255,165,2,0.15)">⏳</div><div><div class="stat-label">Pending Deposits</div><div class="stat-value text-warning" id="statPendingDep">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(255,71,87,0.15)">📤</div><div><div class="stat-label">Pending Withdrawals</div><div class="stat-value text-danger" id="statPendingWith">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(0,212,170,0.15)">💼</div><div><div class="stat-label">Active Investments</div><div class="stat-value" id="statActiveInv">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(122,139,168,0.15)">💸</div><div><div class="stat-label">Total Withdrawn</div><div class="stat-value" id="statWithdrawn">—</div></div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px">
+        <div class="card">
+          <div class="card-header"><h3>Recent Users</h3><a href="/admin/users.html" class="btn btn-ghost btn-sm">View All →</a></div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>KYC</th><th>Joined</th></tr></thead>
+              <tbody id="recentUsersTable"><tr><td colspan="4" class="table-empty">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Recent Deposits</h3><a href="/admin/deposits.html" class="btn btn-ghost btn-sm">View All →</a></div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>User</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody id="recentDepositsTable"><tr><td colspan="3" class="table-empty">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script>
+  if (!Auth.requireAdmin()) throw new Error();
+  UI.initSidebar();
+  UI.populateSidebarUser();
+
+  async function loadDashboard() {
+    document.getElementById('lastRefresh').textContent = 'Refreshing...';
+    try {
+      const res = await api.get('/admin/dashboard');
+      if (!res.success) return;
+      const { stats, recent_users, recent_deposits } = res;
+
+      document.getElementById('statUsers').textContent = stats.total_users.toLocaleString();
+      document.getElementById('statDeposited').textContent = fmt.money(stats.total_deposited);
+      document.getElementById('statPendingDep').textContent = stats.pending_deposits.count + ' (' + fmt.money(stats.pending_deposits.total) + ')';
+      document.getElementById('statPendingWith').textContent = stats.pending_withdrawals.count + ' (' + fmt.money(stats.pending_withdrawals.total) + ')';
+      document.getElementById('statActiveInv').textContent = stats.active_investments.count.toLocaleString();
+      document.getElementById('statWithdrawn').textContent = fmt.money(stats.total_withdrawn);
+
+      document.getElementById('recentUsersTable').innerHTML = recent_users.map(u=>`
+        <tr>
+          <td>${u.first_name} ${u.last_name}</td>
+          <td style="font-size:12px">${u.email}</td>
+          <td>${fmt.badge(u.kyc_status)}</td>
+          <td style="font-size:12px">${fmt.date(u.created_at)}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="4" class="table-empty">No users yet</td></tr>';
+
+      document.getElementById('recentDepositsTable').innerHTML = recent_deposits.map(d=>`
+        <tr>
+          <td style="font-size:12px">${d.first_name} ${d.last_name}</td>
+          <td><strong>${fmt.money(d.amount)}</strong></td>
+          <td>${fmt.badge(d.status)}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="3" class="table-empty">No deposits yet</td></tr>';
+
+      document.getElementById('lastRefresh').textContent = 'Updated ' + fmt.timeAgo(new Date());
+    } catch(e) { Toast.error('Failed to load dashboard'); }
+  }
+
+  loadDashboard();
+</script>
+
+<script>
+// Poll for unread chat messages and update badge
+async function updateChatBadge() {
+  try {
+    const res = await api.get('/chat/admin/unread');
+    const badge = document.getElementById('chatNavBadge');
+    if (badge) {
+      if (res.count > 0) { badge.style.display = 'inline-flex'; badge.textContent = res.count > 9 ? '9+' : res.count; }
+      else badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // Add badge span to chat link if not present
+  const chatLink = document.querySelector('a[href="/admin/chat.html"]');
+  if (chatLink && !chatLink.querySelector('#chatNavBadge')) {
+    const badge = document.createElement('span');
+    badge.id = 'chatNavBadge';
+    badge.style.cssText = 'display:none;background:#FF4757;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:100px;margin-left:auto;min-width:18px;text-align:center';
+    chatLink.appendChild(badge);
+  }
+  if (Auth.isAdmin()) { updateChatBadge(); setInterval(updateChatBadge, 20000); }
+});
+</script>
+</body>
+</html>

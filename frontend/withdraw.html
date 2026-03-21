@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Withdraw — TransAtlantia Trades</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    /* ---- CRYPTO CARD SELECTOR ---- */
+    .crypto-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .crypto-card {
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      position: relative;
+      background: var(--bg-input);
+      user-select: none;
+    }
+    .crypto-card:hover {
+      border-color: var(--c-color);
+      background: var(--c-bg);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .crypto-card.selected {
+      border-color: var(--c-color);
+      background: var(--c-bg);
+      box-shadow: 0 0 0 3px var(--c-glow);
+    }
+    .crypto-card.selected .crypto-check { display: flex; }
+    .crypto-check {
+      display: none;
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 20px; height: 20px;
+      background: var(--c-color);
+      border-radius: 50%;
+      align-items: center; justify-content: center;
+      font-size: 11px; color: #fff; font-weight: 800;
+    }
+    .crypto-icon { font-size: 2rem; margin-bottom: 8px; line-height: 1; }
+    .crypto-ticker { font-family: var(--font-display); font-weight: 800; font-size: 15px; color: var(--text-white); }
+    .crypto-card.selected .crypto-ticker { color: var(--c-color); }
+    .crypto-network { font-size: 10px; color: var(--text-muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .crypto-card.selected .crypto-network { color: var(--c-color); opacity: 0.7; }
+
+    /* ---- ADDRESS VALIDATION ---- */
+    .addr-feedback {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      margin-top: 8px;
+      padding: 10px 13px;
+      border-radius: var(--radius-md);
+      line-height: 1.5;
+      transition: all 0.2s;
+    }
+    .addr-feedback.idle { background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border); }
+    .addr-feedback.valid { background: rgba(46,213,115,0.1); color: var(--success); border: 1px solid rgba(46,213,115,0.25); }
+    .addr-feedback.invalid { background: rgba(255,71,87,0.1); color: var(--danger); border: 1px solid rgba(255,71,87,0.25); }
+    .addr-feedback.warning { background: rgba(255,165,2,0.1); color: var(--warning); border: 1px solid rgba(255,165,2,0.25); }
+
+    /* ---- AMOUNT FEEDBACK ---- */
+    .amount-bar {
+      height: 4px;
+      background: var(--bg-input);
+      border-radius: 100px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .amount-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      transition: width 0.3s, background 0.3s;
+      width: 0;
+    }
+    .amount-hint {
+      font-size: 12px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .amount-hint .limits { color: var(--text-muted); }
+    .amount-hint .status { font-weight: 600; }
+    .amount-hint .status.ok { color: var(--success); }
+    .amount-hint .status.low { color: var(--danger); }
+    .amount-hint .status.high { color: var(--danger); }
+    .amount-hint .status.over-balance { color: var(--warning); }
+  </style>
+  <style>
+    /* Hide Google Translate feedback bar and banner */
+    .goog-te-banner-frame,.goog-te-ftab-frame,#goog-gt-votingFrame,
+    .goog-te-balloon-frame,.goog-tooltip-card,.goog-te-menu-frame { display:none!important; }
+    body { top:0!important; }
+    .goog-te-gadget { color:transparent!important; font-size:0!important; }
+    .goog-te-gadget>span>a { display:none!important; }
+    .goog-te-gadget img { display:none!important; }
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="/img/logo.svg" alt="TransAtlantia" style="width:36px;height:36px;border-radius:8px;flex-shrink:0">
+      <div>
+        <div class="brand-name">TransAtlantia</div>
+        <div class="brand-sub">Trades</div>
+      </div>
+    </div></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/deposit.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposit</a>
+      <a href="/investments.html" class="sidebar-link"><span class="nav-icon">📈</span> Investments</a>
+      <a href="/withdraw.html" class="sidebar-link active"><span class="nav-icon">📤</span> Withdraw</a>
+      <a href="/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/referrals.html" class="sidebar-link"><span class="nav-icon">👥</span> Referrals</a>
+      <a href="/kyc.html" class="sidebar-link"><span class="nav-icon">🪪</span> KYC</a>
+      <a href="/profile.html" class="sidebar-link"><span class="nav-icon">👤</span> Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" id="sidebarUserAvatar">?</div><div class="user-info"><div id="sidebarUserName" class="user-name">—</div><div id="sidebarUserEmail" class="user-role">—</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>Withdraw Funds</h1><p>Send your earnings to your crypto wallet</p></div>
+    </header>
+
+    <div class="page-content">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+
+        <!-- WITHDRAWAL FORM -->
+        <div class="card">
+          <div class="card-header"><h3>New Withdrawal Request</h3></div>
+
+          <!-- Balance display -->
+          <div style="background:linear-gradient(135deg,rgba(0,148,255,0.1),rgba(0,212,170,0.06));border:1px solid rgba(0,148,255,0.2);border-radius:var(--radius-lg);padding:20px;text-align:center;margin-bottom:20px">
+            <div style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Available to Withdraw</div>
+            <div id="availableBalance" style="font-family:var(--font-display);font-size:2.2rem;font-weight:800;color:var(--success)">$0.00</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px" id="limitsDisplay">Loading limits...</div>
+          </div>
+
+          <!-- Amount -->
+          <div class="form-group">
+            <label class="form-label">Withdrawal Amount (USD)</label>
+            <div class="input-group">
+              <span class="input-icon">$</span>
+              <input type="number" class="form-control" id="withdrawAmount" placeholder="0.00" min="0" step="0.01" oninput="validateWithdrawAmount(this.value)">
+            </div>
+            <div class="amount-bar"><div class="amount-bar-fill" id="amountBar"></div></div>
+            <div class="amount-hint">
+              <span class="limits" id="limitsHint">Min: — Max: —</span>
+              <span class="status" id="amountStatus"></span>
+            </div>
+            <!-- Quick-fill buttons -->
+            <div style="display:flex;gap:6px;margin-top:10px" id="quickFills"></div>
+          </div>
+
+          <!-- Crypto selector -->
+          <div class="form-group">
+            <label class="form-label">Withdrawal Currency</label>
+            <div class="crypto-grid">
+              <div class="crypto-card selected"
+                style="--c-color:#F7931A;--c-bg:rgba(247,147,26,0.08);--c-glow:rgba(247,147,26,0.2)"
+                data-currency="BTC" onclick="selectWithdrawCrypto(this)">
+                <span class="crypto-check">✓</span>
+                <div class="crypto-icon">₿</div>
+                <div class="crypto-ticker">BTC</div>
+                <div class="crypto-network">Bitcoin</div>
+              </div>
+              <div class="crypto-card"
+                style="--c-color:#627EEA;--c-bg:rgba(98,126,234,0.08);--c-glow:rgba(98,126,234,0.2)"
+                data-currency="ETH" onclick="selectWithdrawCrypto(this)">
+                <span class="crypto-check">✓</span>
+                <div class="crypto-icon">Ξ</div>
+                <div class="crypto-ticker">ETH</div>
+                <div class="crypto-network">Ethereum ERC20</div>
+              </div>
+              <div class="crypto-card"
+                style="--c-color:#26A17B;--c-bg:rgba(38,161,123,0.08);--c-glow:rgba(38,161,123,0.2)"
+                data-currency="USDT_TRC20" onclick="selectWithdrawCrypto(this)">
+                <span class="crypto-check">✓</span>
+                <div class="crypto-icon">₮</div>
+                <div class="crypto-ticker">USDT</div>
+                <div class="crypto-network">Tron TRC20</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wallet address input -->
+          <div class="form-group">
+            <label class="form-label">
+              Your <span id="selectedCryptoLabel" style="color:var(--primary)">BTC</span> Wallet Address
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="walletAddressInput"
+              placeholder="Paste your BTC wallet address"
+              oninput="validateWalletAddress(this.value)"
+              autocomplete="off"
+              spellcheck="false"
+            >
+            <div class="addr-feedback idle" id="addrFeedback">
+              <span>🔍</span>
+              <span id="addrFeedbackText">Start typing your wallet address to validate it</span>
+            </div>
+          </div>
+
+          <div id="withdrawAlertBox"></div>
+
+          <button class="btn btn-primary btn-block btn-lg" id="withdrawBtn" onclick="submitWithdrawal()">
+            📤 Request Withdrawal
+          </button>
+
+          <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px;line-height:1.6">
+            Withdrawals are reviewed by our team and processed within 24 hours.
+            <br>Always double-check your wallet address — incorrect addresses cannot be recovered.
+          </p>
+        </div>
+
+        <!-- WITHDRAWAL HISTORY -->
+        <div class="card">
+          <div class="card-header"><h3>Withdrawal History</h3></div>
+          <div id="withdrawalHistory">
+            <div style="text-align:center;padding:40px 0"><div class="spinner" style="margin:0 auto"></div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/chat.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error();
+  UI.initSidebar();
+  UI.populateSidebarUser();
+
+  // ---- CRYPTO CONFIG (address validation rules) ----
+  const CRYPTOS = {
+    BTC: {
+      label: 'BTC',
+      fullLabel: 'Bitcoin (BTC)',
+      placeholder: 'Paste your BTC wallet address',
+      validate: (addr) => /^(1|3|bc1)[A-Za-z0-9]{24,61}$/.test(addr),
+      formatHint: 'Starts with 1, 3, or bc1 · 26 to 62 characters',
+      networkWarn: 'Bitcoin Network only',
+    },
+    ETH: {
+      label: 'ETH',
+      fullLabel: 'Ethereum (ETH)',
+      placeholder: 'Paste your ETH wallet address (0x...)',
+      validate: (addr) => /^0x[0-9a-fA-F]{40}$/.test(addr),
+      formatHint: 'Starts with 0x · exactly 42 characters',
+      networkWarn: 'Ethereum ERC20 only — not BEP20 or TRC20',
+    },
+    USDT_TRC20: {
+      label: 'USDT',
+      fullLabel: 'USDT TRC20',
+      placeholder: 'Paste your TRC20 wallet address (T...)',
+      validate: (addr) => /^T[A-Za-z0-9]{33}$/.test(addr),
+      formatHint: 'Starts with T · exactly 34 characters',
+      networkWarn: 'Tron TRC20 only — not ERC20 USDT',
+    },
+  };
+
+  let selectedCurrency = 'BTC';
+  let availableBalance = 0;
+  let minWithdraw = 50;
+  let maxWithdraw = 50000;
+
+  // ---- LOAD PAGE DATA ----
+  async function loadWithdrawPage() {
+    try {
+      const [dashRes, histRes, settingsRes] = await Promise.all([
+        api.get('/user/dashboard'),
+        api.get('/withdrawals'),
+        api.get('/user/withdraw-limits'),
+      ]);
+
+      if (dashRes.success) {
+        availableBalance = parseFloat(dashRes.dashboard.balance.withdrawable) || 0;
+        document.getElementById('availableBalance').textContent = fmt.money(availableBalance);
+        setupQuickFills();
+      }
+
+      if (settingsRes.success) {
+        minWithdraw = parseFloat(settingsRes.min) || 50;
+        maxWithdraw = parseFloat(settingsRes.max) || 50000;
+        document.getElementById('limitsHint').textContent = `Min: ${fmt.money(minWithdraw)} — Max: ${fmt.money(maxWithdraw)}`;
+        document.getElementById('limitsDisplay').textContent = `Min withdrawal: ${fmt.money(minWithdraw)} · Max: ${fmt.money(maxWithdraw)}`;
+        setupQuickFills();
+      }
+
+      if (histRes.success) {
+        renderHistory(histRes.withdrawals);
+      }
+    } catch(e) {
+      Toast.error('Failed to load withdrawal data');
+    }
+  }
+
+  function setupQuickFills() {
+    const container = document.getElementById('quickFills');
+    const suggestions = [
+      { label: '25%', val: availableBalance * 0.25 },
+      { label: '50%', val: availableBalance * 0.50 },
+      { label: '75%', val: availableBalance * 0.75 },
+      { label: 'Max', val: Math.min(availableBalance, maxWithdraw) },
+    ].filter(s => s.val >= minWithdraw);
+
+    container.innerHTML = suggestions.map(s => `
+      <button class="btn btn-outline btn-sm" onclick="setAmount(${s.val.toFixed(2)})" style="font-size:12px;padding:5px 12px">
+        ${s.label} (${fmt.money(s.val)})
+      </button>
+    `).join('');
+  }
+
+  function setAmount(val) {
+    document.getElementById('withdrawAmount').value = val.toFixed(2);
+    validateWithdrawAmount(val.toFixed(2));
+  }
+
+  // ---- SELECT CRYPTO ----
+  function selectWithdrawCrypto(el) {
+    document.querySelectorAll('.crypto-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedCurrency = el.dataset.currency;
+
+    const cfg = CRYPTOS[selectedCurrency];
+    document.getElementById('selectedCryptoLabel').textContent = cfg.label;
+    document.getElementById('walletAddressInput').placeholder = cfg.placeholder;
+
+    // Re-validate address with new crypto rules
+    const addr = document.getElementById('walletAddressInput').value.trim();
+    if (addr) validateWalletAddress(addr);
+    else showAddrIdle();
+  }
+
+  // ---- AMOUNT VALIDATION ----
+  function validateWithdrawAmount(val) {
+    const bar = document.getElementById('amountBar');
+    const status = document.getElementById('amountStatus');
+    const num = parseFloat(val);
+
+    if (!val || isNaN(num) || num <= 0) {
+      bar.style.width = '0';
+      status.textContent = '';
+      status.className = 'status';
+      return;
+    }
+
+    // Calculate fill percentage based on max
+    const pct = Math.min((num / maxWithdraw) * 100, 100);
+    bar.style.width = pct + '%';
+
+    if (num < minWithdraw) {
+      bar.style.background = 'var(--danger)';
+      status.textContent = `⚠ Below minimum (${fmt.money(minWithdraw)})`;
+      status.className = 'status low';
+    } else if (num > maxWithdraw) {
+      bar.style.background = 'var(--danger)';
+      status.textContent = `⚠ Exceeds maximum (${fmt.money(maxWithdraw)})`;
+      status.className = 'status high';
+    } else if (num > availableBalance) {
+      bar.style.background = 'var(--warning)';
+      status.textContent = `⚠ Exceeds your balance (${fmt.money(availableBalance)})`;
+      status.className = 'status over-balance';
+    } else {
+      bar.style.background = 'var(--success)';
+      status.textContent = `✓ Valid amount`;
+      status.className = 'status ok';
+    }
+  }
+
+  // ---- ADDRESS VALIDATION ----
+  function validateWalletAddress(addr) {
+    const feedback = document.getElementById('addrFeedback');
+    const feedbackText = document.getElementById('addrFeedbackText');
+    const cfg = CRYPTOS[selectedCurrency];
+
+    if (!addr) {
+      showAddrIdle();
+      return;
+    }
+
+    // Check length first for friendlier messages
+    if (addr.length < 8) {
+      feedback.className = 'addr-feedback warning';
+      feedbackText.textContent = `⏳ Keep typing... (${cfg.formatHint})`;
+      return;
+    }
+
+    if (cfg.validate(addr)) {
+      feedback.className = 'addr-feedback valid';
+      feedbackText.innerHTML = `✅ Valid ${cfg.fullLabel} address — <strong>${cfg.networkWarn}</strong>`;
+    } else {
+      feedback.className = 'addr-feedback invalid';
+      feedbackText.innerHTML = `❌ Invalid ${cfg.fullLabel} address format — ${cfg.formatHint}`;
+    }
+  }
+
+  function showAddrIdle() {
+    const cfg = CRYPTOS[selectedCurrency];
+    const feedback = document.getElementById('addrFeedback');
+    feedback.className = 'addr-feedback idle';
+    document.getElementById('addrFeedbackText').textContent =
+      `Paste your ${cfg.fullLabel} address — ${cfg.formatHint}`;
+  }
+
+  // ---- SUBMIT ----
+  async function submitWithdrawal() {
+    const btn = document.getElementById('withdrawBtn');
+    const alertBox = document.getElementById('withdrawAlertBox');
+    alertBox.innerHTML = '';
+
+    const amount = parseFloat(document.getElementById('withdrawAmount').value);
+    const walletAddr = document.getElementById('walletAddressInput').value.trim();
+    const cfg = CRYPTOS[selectedCurrency];
+
+    // Validate amount
+    if (!amount || amount <= 0) {
+      UI.showAlert(alertBox, 'Please enter a withdrawal amount', 'error'); return;
+    }
+    if (amount < minWithdraw) {
+      UI.showAlert(alertBox, `Minimum withdrawal is ${fmt.money(minWithdraw)}`, 'error'); return;
+    }
+    if (amount > maxWithdraw) {
+      UI.showAlert(alertBox, `Maximum withdrawal is ${fmt.money(maxWithdraw)}`, 'error'); return;
+    }
+    if (amount > availableBalance) {
+      UI.showAlert(alertBox, `Insufficient balance. Available: ${fmt.money(availableBalance)}`, 'error'); return;
+    }
+
+    // Validate wallet address
+    if (!walletAddr) {
+      UI.showAlert(alertBox, 'Please enter your wallet address', 'error'); return;
+    }
+    if (!cfg.validate(walletAddr)) {
+      UI.showAlert(alertBox, `Invalid ${cfg.fullLabel} address format. ${cfg.formatHint}`, 'error'); return;
+    }
+
+    // Confirm
+    if (!confirm(`Confirm withdrawal:\n\nAmount: ${fmt.money(amount)}\nCurrency: ${cfg.fullLabel}\nAddress: ${walletAddr}\n\nThis action cannot be undone.`)) return;
+
+    UI.setLoading(btn, true, 'Submitting...');
+    try {
+      const res = await api.post('/withdrawals', {
+        amount,
+        currency: selectedCurrency,
+        wallet_address: walletAddr
+      });
+
+      if (res.success) {
+        Toast.success('Withdrawal request submitted!');
+        document.getElementById('withdrawAmount').value = '';
+        document.getElementById('walletAddressInput').value = '';
+        document.getElementById('amountBar').style.width = '0';
+        document.getElementById('amountStatus').textContent = '';
+        showAddrIdle();
+        availableBalance -= amount;
+        document.getElementById('availableBalance').textContent = fmt.money(availableBalance);
+        setupQuickFills();
+        loadHistory();
+      } else {
+        UI.showAlert(alertBox, res.message || 'Failed to submit', 'error');
+      }
+    } catch(e) {
+      UI.showAlert(alertBox, 'Connection error. Please try again.', 'error');
+    }
+    UI.setLoading(btn, false);
+  }
+
+  // ---- RENDER HISTORY ----
+  async function loadHistory() {
+    try {
+      const res = await api.get('/withdrawals');
+      if (res.success) renderHistory(res.withdrawals);
+    } catch(e) {}
+  }
+
+  function renderHistory(list) {
+    const container = document.getElementById('withdrawalHistory');
+    if (!list || !list.length) {
+      container.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-muted)">No withdrawals yet</div>';
+      return;
+    }
+    const currencyLabels = { BTC:'Bitcoin', ETH:'Ethereum', USDT_TRC20:'USDT TRC20' };
+    container.innerHTML = list.map(w => `
+      <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${fmt.money(w.amount)}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+              ${currencyLabels[w.currency]||w.currency} · ${fmt.date(w.created_at)}
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-family:monospace;word-break:break-all">
+              → ${w.wallet_address}
+            </div>
+            ${w.admin_note ? `<div style="font-size:11px;color:var(--warning);margin-top:4px">Note: ${escHtml(w.admin_note)}</div>` : ''}
+          </div>
+          <div style="flex-shrink:0">${fmt.badge(w.status)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Init address hint
+  function escHtml(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  showAddrIdle();
+  loadWithdrawPage();
+</script>
+</body>
+</html>

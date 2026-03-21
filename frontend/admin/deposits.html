@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Manage Deposits — Admin</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand" style="border-bottom:2px solid var(--danger)">
+      <div class="brand-logo" style="background:linear-gradient(135deg,var(--danger),#cc0000)">🛡</div>
+      <div><div class="brand-name">Admin Panel</div><div class="brand-sub">TransAtlantia Trades</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/admin/users.html" class="sidebar-link"><span class="nav-icon">👥</span> Users</a>
+      <a href="/admin/deposits.html" class="sidebar-link active"><span class="nav-icon">💰</span> Deposits</a>
+      <a href="/admin/withdrawals.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdrawals</a>
+      <a href="/admin/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/admin/plans.html" class="sidebar-link"><span class="nav-icon">📊</span> Plans</a>
+      <a href="/admin/chat.html" class="sidebar-link"><span class="nav-icon">💬</span> Live Chat</a>
+      <a href="/admin/settings.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Settings</a>
+      <a href="/admin/email-templates.html" class="sidebar-link"><span class="nav-icon">📧</span> Email Templates</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" style="background:var(--danger)">A</div><div class="user-info"><div class="user-name">Admin</div><div class="user-role" style="color:var(--danger)">Administrator</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>Deposit Management</h1><p>Review and confirm user deposits</p></div>
+    </header>
+
+    <div class="page-content">
+      <div class="card mb-3">
+        <div class="flex gap-2 flex-wrap">
+          <button class="btn btn-primary btn-sm filter-btn active" data-status="pending" onclick="filterDeposits('pending',this)">⏳ Pending</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-status="confirmed" onclick="filterDeposits('confirmed',this)">✅ Confirmed</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-status="rejected" onclick="filterDeposits('rejected',this)">❌ Rejected</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-status="all" onclick="filterDeposits('all',this)">📋 All</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>User</th><th>Plan</th><th>Amount</th><th>Currency</th><th>TXID</th><th>Proof</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="depositsTable"><tr><td colspan="9" class="table-empty">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="actionModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><h3 id="actionModalTitle">Confirm Action</h3><button class="modal-close" onclick="UI.closeModal('actionModal')">×</button></div>
+    <div class="modal-body">
+      <div id="actionModalInfo" style="font-size:14px;color:var(--text-secondary);margin-bottom:16px"></div>
+      <div class="form-group">
+        <label class="form-label">Admin Note (optional)</label>
+        <textarea class="form-control" id="adminNoteInput" placeholder="Add a note for the user..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="UI.closeModal('actionModal')">Cancel</button>
+      <button class="btn" id="actionConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script>
+  if (!Auth.requireAdmin()) throw new Error();
+  UI.initSidebar();
+
+  let currentDeposits = [], pendingAction = null;
+
+  async function loadDeposits(status = 'pending') {
+    document.getElementById('depositsTable').innerHTML = '<tr><td colspan="9" class="table-empty">Loading...</td></tr>';
+    try {
+      const res = await api.get('/admin/deposits?status=' + status);
+      currentDeposits = res.deposits || [];
+      renderDeposits(currentDeposits);
+    } catch(e) { Toast.error('Failed to load deposits'); }
+  }
+
+  function renderDeposits(deposits) {
+    const tbody = document.getElementById('depositsTable');
+    if (!deposits.length) { tbody.innerHTML = '<tr><td colspan="9" class="table-empty">No deposits found</td></tr>'; return; }
+    tbody.innerHTML = deposits.map(d => `
+      <tr>
+        <td style="font-size:12px">${fmt.date(d.created_at)}</td>
+        <td>
+          <div style="font-weight:600;font-size:13px">${d.first_name} ${d.last_name}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${d.email}</div>
+        </td>
+        <td style="font-size:13px">${d.plan_name||'—'}</td>
+        <td><strong>${fmt.money(d.amount)}</strong></td>
+        <td><span style="font-family:monospace;font-size:12px">${d.currency}</span></td>
+        <td style="font-size:11px;font-family:monospace;max-width:100px;overflow:hidden;text-overflow:ellipsis">${d.txid||'—'}</td>
+        <td>${d.proof_file?`<a href="/uploads/proofs/${d.proof_file}" target="_blank" class="btn btn-outline btn-sm">View</a>`:'—'}</td>
+        <td>${fmt.badge(d.status)}</td>
+        <td>
+          ${d.status==='pending'?`
+            <div class="flex gap-1">
+              <button class="btn btn-success btn-sm" onclick="openAction('confirm','${d.id}','${d.first_name} ${d.last_name}',${d.amount})">✓ Confirm</button>
+              <button class="btn btn-danger btn-sm" onclick="openAction('reject','${d.id}','${d.first_name} ${d.last_name}',${d.amount})">✗ Reject</button>
+            </div>
+          `:'—'}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function openAction(action, depositId, userName, amount) {
+    pendingAction = { action, depositId };
+    const isConfirm = action === 'confirm';
+    document.getElementById('actionModalTitle').textContent = isConfirm ? '✅ Confirm Deposit' : '❌ Reject Deposit';
+    document.getElementById('actionModalInfo').innerHTML = `
+      <strong>${isConfirm?'Confirming':'Rejecting'}</strong> deposit of <strong>${fmt.money(amount)}</strong> from <strong>${userName}</strong>.
+      ${isConfirm?'This will activate their investment plan.':'Their balance will not be credited.'}
+    `;
+    document.getElementById('adminNoteInput').value = '';
+    const btn = document.getElementById('actionConfirmBtn');
+    btn.className = `btn ${isConfirm?'btn-success':'btn-danger'}`;
+    btn.textContent = isConfirm ? '✅ Confirm Deposit' : '❌ Reject Deposit';
+    btn.onclick = executeAction;
+    UI.openModal('actionModal');
+  }
+
+  async function executeAction() {
+    if (!pendingAction) return;
+    const { action, depositId } = pendingAction;
+    const note = document.getElementById('adminNoteInput').value;
+    const btn = document.getElementById('actionConfirmBtn');
+    UI.setLoading(btn, true, 'Processing...');
+    try {
+      const res = await api.patch(`/admin/deposits/${depositId}/${action}`, { admin_note: note });
+      if (res.success) {
+        Toast.success(action === 'confirm' ? 'Deposit confirmed!' : 'Deposit rejected');
+        UI.closeModal('actionModal');
+        loadDeposits(document.querySelector('.filter-btn.active')?.dataset.status || 'pending');
+      } else { Toast.error(res.message || 'Failed'); }
+    } catch(e) { Toast.error('Error'); }
+    UI.setLoading(btn, false);
+  }
+
+  function filterDeposits(status, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b=>{b.className='btn btn-outline btn-sm filter-btn';});
+    btn.className = 'btn btn-primary btn-sm filter-btn active';
+    loadDeposits(status);
+  }
+
+  loadDeposits('pending');
+</script>
+
+<script>
+// Poll for unread chat messages and update badge
+async function updateChatBadge() {
+  try {
+    const res = await api.get('/chat/admin/unread');
+    const badge = document.getElementById('chatNavBadge');
+    if (badge) {
+      if (res.count > 0) { badge.style.display = 'inline-flex'; badge.textContent = res.count > 9 ? '9+' : res.count; }
+      else badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // Add badge span to chat link if not present
+  const chatLink = document.querySelector('a[href="/admin/chat.html"]');
+  if (chatLink && !chatLink.querySelector('#chatNavBadge')) {
+    const badge = document.createElement('span');
+    badge.id = 'chatNavBadge';
+    badge.style.cssText = 'display:none;background:#FF4757;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:100px;margin-left:auto;min-width:18px;text-align:center';
+    chatLink.appendChild(badge);
+  }
+  if (Auth.isAdmin()) { updateChatBadge(); setInterval(updateChatBadge, 20000); }
+});
+</script>
+</body>
+</html>

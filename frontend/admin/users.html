@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Manage Users — Admin</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand" style="border-bottom:2px solid var(--danger)">
+      <div class="brand-logo" style="background:linear-gradient(135deg,var(--danger),#cc0000)">🛡</div>
+      <div><div class="brand-name">Admin Panel</div><div class="brand-sub">TransAtlantia Trades</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="sidebar-link"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="/admin/users.html" class="sidebar-link active"><span class="nav-icon">👥</span> Users</a>
+      <a href="/admin/deposits.html" class="sidebar-link"><span class="nav-icon">💰</span> Deposits</a>
+      <a href="/admin/withdrawals.html" class="sidebar-link"><span class="nav-icon">📤</span> Withdrawals</a>
+      <a href="/admin/transactions.html" class="sidebar-link"><span class="nav-icon">📋</span> Transactions</a>
+      <a href="/admin/plans.html" class="sidebar-link"><span class="nav-icon">📊</span> Plans</a>
+      <a href="/admin/chat.html" class="sidebar-link"><span class="nav-icon">💬</span> Live Chat</a>
+      <a href="/admin/settings.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Settings</a>
+      <a href="/admin/email-templates.html" class="sidebar-link"><span class="nav-icon">📧</span> Email Templates</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar" style="background:var(--danger)">A</div><div class="user-info"><div class="user-name">Admin</div><div class="user-role" style="color:var(--danger)">Administrator</div></div></div>
+      <button onclick="Auth.logout()" class="btn btn-ghost btn-sm w-full mt-1" style="color:var(--danger)">⬅ Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="topbar-title"><h1>User Management</h1></div>
+    </header>
+
+    <div class="page-content">
+      <div class="card mb-3">
+        <div class="flex gap-2">
+          <input type="text" class="form-control" id="searchInput" placeholder="Search by name or email..." style="max-width:340px" oninput="searchUsers()">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>User</th><th>Balance</th><th>Deposited</th><th>KYC</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody id="usersTable"><tr><td colspan="7" class="table-empty">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- CREDIT/DEBIT MODAL -->
+<div class="modal-overlay" id="balanceModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><h3>Adjust Balance</h3><button class="modal-close" onclick="UI.closeModal('balanceModal')">×</button></div>
+    <div class="modal-body">
+      <p id="balanceModalUser" style="font-size:14px;color:var(--text-secondary);margin-bottom:16px"></p>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select class="form-control" id="balanceType">
+          <option value="credit">Credit (Add funds)</option>
+          <option value="debit">Debit (Remove funds)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (USD)</label>
+        <div class="input-group"><span class="input-icon">$</span><input type="number" class="form-control" id="balanceAmount" min="0.01" step="0.01" placeholder="0.00"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason / Description</label>
+        <input type="text" class="form-control" id="balanceDesc" placeholder="e.g. Bonus credit, correction...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="UI.closeModal('balanceModal')">Cancel</button>
+      <button class="btn btn-primary" id="applyBalanceBtn" onclick="applyBalance()">Apply Adjustment</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script>
+  if (!Auth.requireAdmin()) throw new Error();
+  UI.initSidebar();
+  let currentUserId = null, searchTimeout = null;
+
+  async function loadUsers(search='') {
+    document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" class="table-empty">Loading...</td></tr>';
+    try {
+      const res = await api.get('/admin/users?search='+encodeURIComponent(search));
+      const users = res.users || [];
+      if (!users.length) { document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" class="table-empty">No users found</td></tr>'; return; }
+      document.getElementById('usersTable').innerHTML = users.map(u=>`
+        <tr style="cursor:pointer" onclick="window.location.href='/admin/user-detail.html?id=${u.id}'">
+          <td>
+            <div style="font-weight:600;font-size:13px">${u.first_name} ${u.last_name}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${u.email}</div>
+          </td>
+          <td><strong style="color:var(--success)">${fmt.money(u.withdrawable_balance||0)}</strong></td>
+          <td>${fmt.money(u.total_deposited||0)}</td>
+          <td>${fmt.badge(u.kyc_status)}</td>
+          <td><span class="badge ${u.is_active?'badge-success':'badge-danger'}">${u.is_active?'Active':'Suspended'}</span></td>
+          <td style="font-size:12px">${fmt.date(u.created_at)}</td>
+          <td>
+            <div class="flex gap-1">
+              <button class="btn btn-outline btn-sm" onclick="openBalanceModal('${u.id}','${u.first_name} ${u.last_name}')">💵 Balance</button>
+              ${u.kyc_status==='submitted'?`<button class="btn btn-primary btn-sm" onclick="approveKyc('${u.id}')">✓ KYC</button>`:''}
+              <button class="btn btn-sm ${u.is_active?'btn-danger':'btn-success'}" onclick="toggleUser('${u.id}',this)">${u.is_active?'Suspend':'Activate'}</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    } catch(e) { Toast.error('Failed to load users'); }
+  }
+
+  function searchUsers() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => loadUsers(document.getElementById('searchInput').value), 400);
+  }
+
+  function openBalanceModal(userId, name) {
+    currentUserId = userId;
+    document.getElementById('balanceModalUser').textContent = `Adjusting balance for: ${name}`;
+    document.getElementById('balanceAmount').value = '';
+    document.getElementById('balanceDesc').value = '';
+    UI.openModal('balanceModal');
+  }
+
+  async function applyBalance() {
+    const btn = document.getElementById('applyBalanceBtn');
+    const amount = document.getElementById('balanceAmount').value;
+    const type = document.getElementById('balanceType').value;
+    const desc = document.getElementById('balanceDesc').value;
+    if (!amount || parseFloat(amount) <= 0) { Toast.error('Enter valid amount'); return; }
+    if (!desc.trim()) { Toast.error('Enter a reason'); return; }
+    UI.setLoading(btn, true, 'Applying...');
+    try {
+      const res = await api.post(`/admin/users/${currentUserId}/adjust-balance`, { amount: parseFloat(amount), type, description: desc });
+      if (res.success) { Toast.success('Balance adjusted!'); UI.closeModal('balanceModal'); loadUsers(); }
+      else Toast.error(res.message||'Failed');
+    } catch(e) { Toast.error('Error'); }
+    UI.setLoading(btn, false);
+  }
+
+  async function toggleUser(id, btn) {
+    const orig = btn.textContent;
+    btn.disabled = true;
+    try {
+      const res = await api.patch(`/admin/users/${id}/toggle-status`);
+      if (res.success) { Toast.success(`User ${res.user.is_active?'activated':'suspended'}`); loadUsers(); }
+      else Toast.error(res.message||'Failed');
+    } catch(e) { Toast.error('Error'); }
+    btn.disabled = false;
+  }
+
+  async function approveKyc(id) {
+    if (!confirm('Approve KYC for this user?')) return;
+    try {
+      const res = await api.patch('/admin/users/' + id + '/kyc', { status: 'approved' });
+      if (res.success) { Toast.success('KYC approved'); loadUsers(); }
+      else Toast.error(res.message || 'Failed');
+    } catch(e) { Toast.error('Error'); }
+  }
+
+  loadUsers();
+</script>
+
+<script>
+// Poll for unread chat messages and update badge
+async function updateChatBadge() {
+  try {
+    const res = await api.get('/chat/admin/unread');
+    const badge = document.getElementById('chatNavBadge');
+    if (badge) {
+      if (res.count > 0) { badge.style.display = 'inline-flex'; badge.textContent = res.count > 9 ? '9+' : res.count; }
+      else badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // Add badge span to chat link if not present
+  const chatLink = document.querySelector('a[href="/admin/chat.html"]');
+  if (chatLink && !chatLink.querySelector('#chatNavBadge')) {
+    const badge = document.createElement('span');
+    badge.id = 'chatNavBadge';
+    badge.style.cssText = 'display:none;background:#FF4757;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:100px;margin-left:auto;min-width:18px;text-align:center';
+    chatLink.appendChild(badge);
+  }
+  if (Auth.isAdmin()) { updateChatBadge(); setInterval(updateChatBadge, 20000); }
+});
+</script>
+</body>
+</html>
