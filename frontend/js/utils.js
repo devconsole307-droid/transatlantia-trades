@@ -2,7 +2,17 @@
    TransAtlantia Trades — Platform Utilities
    ============================================================ */
 
-const API_BASE = '/api';
+// Render: frontend and backend are on different URLs
+// Detect environment and point to the correct backend
+const API_BASE = (() => {
+  const hostname = window.location.hostname;
+  // Local development
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:5000/api';
+  }
+  // Production — point directly to Render backend
+  return 'https://transatlantia-trades-backend.onrender.com/api';
+})();
 
 // ---- TOKEN MANAGEMENT ----
 const Auth = {

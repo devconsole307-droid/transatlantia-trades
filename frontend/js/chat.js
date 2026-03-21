@@ -7,7 +7,12 @@
   'use strict';
 
   // ---- CONFIG ----
-  const SOCKET_URL = window.location.origin;
+  // Render: Socket.io must connect to backend directly, not frontend origin
+  const SOCKET_URL = (() => {
+    const h = window.location.hostname;
+    if (h === 'localhost' || h === '127.0.0.1') return window.location.origin;
+    return 'https://transatlantia-trades-backend.onrender.com';
+  })();
   const TOKEN = localStorage.getItem('platform_token');
   const USER = (() => { try { return JSON.parse(localStorage.getItem('platform_user')); } catch { return null; } })();
 

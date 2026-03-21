@@ -97,9 +97,12 @@ app.use(helmet({
 const allowedOrigins = [
   process.env.SITE_URL,
   process.env.FRONTEND_URL,
-  process.env.RENDER_EXTERNAL_URL,   // auto-set by Render
+  process.env.RENDER_EXTERNAL_URL,
+  // Hardcode Render frontend URL as fallback
+  'https://transatlantia-trades-frontend.onrender.com',
   'http://localhost:5000',
   'http://localhost:3000',
+  'http://localhost:10000',
 ].filter(Boolean);
 
 app.use(cors({
