@@ -76,15 +76,14 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); font-weight: 700; lin
   top: 0; left: 0;
   height: 100vh;
   z-index: 200;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
   overflow-y: auto;
   overflow-x: hidden;
-  /* Always hidden until toggled — works on ALL screen sizes including desktop mode */
   transform: translateX(-100%);
 }
 .sidebar.open {
   transform: translateX(0);
-  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 4px 0 32px rgba(0,0,0,0.5);
 }
 .sidebar-brand {
   padding: 20px 16px;
@@ -132,7 +131,7 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); font-weight: 700; lin
 .user-role { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Sidebar overlay (mobile) */
-.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 199; backdrop-filter: blur(1px); }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 199; }
 .sidebar-overlay.open { display: block; }
 
 /* ---- MAIN CONTENT ---- */
@@ -171,7 +170,6 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); font-weight: 700; lin
   border: none;
   padding: 6px;
   flex-shrink: 0;
-  cursor: pointer;
 }
 .hamburger span { display: block; width: 22px; height: 2px; background: var(--text-primary); border-radius: 2px; transition: all 0.3s; }
 
