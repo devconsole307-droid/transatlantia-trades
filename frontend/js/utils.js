@@ -10,8 +10,8 @@ const API_BASE = (() => {
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:5000/api';
   }
-  // Production — use relative path (Render static site proxies /api/* to backend)
-  return '/api';
+  // Production — point directly to Render backend
+  return 'https://transatlantia-trades-backend.onrender.com/api';
 })();
 
 // ---- TOKEN MANAGEMENT ----
