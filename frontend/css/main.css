@@ -174,14 +174,12 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); font-weight: 700; lin
 /* ---- HAMBURGER ---- */
 .hamburger {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
   background: none;
   border: none;
   padding: 6px;
   flex-shrink: 0;
 }
-.hamburger span { display: block; width: 22px; height: 2px; background: var(--text-primary); border-radius: 2px; transition: all 0.3s; }
+.hamburger span { display: none; }
 
 /* ---- PAGE CONTENT ---- */
 .page-content { flex: 1; padding: 24px; overflow-x: hidden; }
