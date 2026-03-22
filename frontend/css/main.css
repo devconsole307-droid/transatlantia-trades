@@ -573,3 +573,36 @@ html { -webkit-overflow-scrolling: touch; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+
+/* ============================================================
+   SIDEBAR OVERRIDE — collapsed by default on ALL devices
+   ============================================================ */
+
+/* Always hidden until toggled */
+.sidebar { transform: translateX(-100%) !important; transition: transform 0.3s ease !important; }
+.sidebar.open { transform: translateX(0) !important; box-shadow: 4px 0 24px rgba(0,0,0,0.5) !important; }
+
+/* Content never offset — sidebar overlays on all devices */
+.main-content, .main-wrap { margin-left: 0 !important; }
+
+/* Hamburger always visible as a styled bubble */
+.hamburger, .sidebar-toggle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, var(--primary, #0094FF), var(--accent, #00d4aa)) !important;
+  border: none !important;
+  cursor: pointer !important;
+  color: #fff !important;
+  font-size: 1rem !important;
+  box-shadow: 0 2px 10px rgba(0,148,255,0.4) !important;
+  flex-shrink: 0 !important;
+}
+
+/* Overlay always works on all screen sizes */
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199; }
+.sidebar-overlay.open { display: block !important; }
