@@ -172,14 +172,7 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); font-weight: 700; lin
 .topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 /* ---- HAMBURGER ---- */
-.hamburger {
-  display: flex;
-  background: none;
-  border: none;
-  padding: 6px;
-  flex-shrink: 0;
-}
-.hamburger span { display: none; }
+
 
 /* ---- PAGE CONTENT ---- */
 .page-content { flex: 1; padding: 24px; overflow-x: hidden; }
@@ -473,29 +466,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
    Ensures all interactive elements respond to touch on mobile
    ============================================================ */
 
-/* Fix iOS button tap delay */
-button, a, .btn, .sidebar-link, .crypto-card,
-.plan-card, .stat-card, input, select, textarea,
-.hamburger, .modal-close, .chat-open-btn {
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
-  touch-action: manipulation;
-}
 
-/* Ensure hamburger is always tappable */
-.hamburger {
-  min-width: 44px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 300;
-}
-
-/* Sidebar links need full tap area */
-.sidebar-link {
-  min-height: 44px;
-}
 
 /* Fix iOS input zoom */
 @media (max-width: 768px) {
@@ -543,27 +514,7 @@ html { -webkit-overflow-scrolling: touch; }
   transform: translateZ(0);
 }
 
-/* Ensure hamburger always visible and clickable on mobile */
-@media (max-width: 768px) {
-  .hamburger {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    z-index: 300;
-    flex-shrink: 0;
-  }
-  .hamburger span {
-    pointer-events: none;
-  }
-  /* Full-width buttons on mobile */
-  .topbar-actions {
-    display: none;
-  }
-}
+
 
 /* Prevent text overflow on small screens */
 .brand-name, .user-name, .topbar-title h1 {
@@ -584,7 +535,13 @@ html { -webkit-overflow-scrolling: touch; }
 /* Content never offset — sidebar overlays on all devices */
 .main-content, .main-wrap { margin-left: 0 !important; }
 
-/* Hamburger always visible as a styled bubble */
+
+
+/* Overlay always works on all screen sizes */
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199; }
+.sidebar-overlay.open { display: block !important; }
+
+/* ---- HAMBURGER BUTTON ---- */
 .hamburger, .sidebar-toggle {
   display: flex !important;
   align-items: center !important;
@@ -592,18 +549,23 @@ html { -webkit-overflow-scrolling: touch; }
   width: 40px !important;
   height: 40px !important;
   border-radius: 50% !important;
-  background: linear-gradient(135deg, var(--primary, #0094FF), var(--accent, #00d4aa)) !important;
+  background: linear-gradient(135deg, #0094FF, #00d4aa) !important;
   border: none !important;
   cursor: pointer !important;
   color: #fff !important;
   font-size: 1.2rem !important;
-  box-shadow: 0 2px 10px rgba(0,148,255,0.4) !important;
-  flex-shrink: 0 !important;
   line-height: 1 !important;
+  box-shadow: 0 2px 10px rgba(0,148,255,0.35) !important;
+  flex-shrink: 0 !important;
+  z-index: 300 !important;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
 }
-/* Hide the span lines inside hamburger — we use ☰ text icon instead */
 .hamburger span, .sidebar-toggle span { display: none !important; }
 
-/* Overlay always works on all screen sizes */
-.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199; }
-.sidebar-overlay.open { display: block !important; }
+/* iOS tap fix */
+button, a, .btn, .sidebar-link, input, select, textarea {
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  touch-action: manipulation;
+}
+.sidebar-link { min-height: 44px; }
