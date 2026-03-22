@@ -591,17 +591,20 @@ html { -webkit-overflow-scrolling: touch; }
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 38px !important;
-  height: 38px !important;
+  width: 40px !important;
+  height: 40px !important;
   border-radius: 50% !important;
   background: linear-gradient(135deg, var(--primary, #0094FF), var(--accent, #00d4aa)) !important;
   border: none !important;
   cursor: pointer !important;
   color: #fff !important;
-  font-size: 1rem !important;
+  font-size: 1.2rem !important;
   box-shadow: 0 2px 10px rgba(0,148,255,0.4) !important;
   flex-shrink: 0 !important;
+  line-height: 1 !important;
 }
+/* Hide the span lines inside hamburger — we use ☰ text icon instead */
+.hamburger span, .sidebar-toggle span { display: none !important; }
 
 /* Overlay always works on all screen sizes */
 .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199; }
