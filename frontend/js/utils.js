@@ -190,7 +190,7 @@ const UI = {
 
     // Close when nav link tapped on mobile
     sidebar.querySelectorAll('.sidebar-link').forEach(link => {
-      link.addEventListener('click', () => { if (window.innerWidth <= 768) close(); });
+      link.addEventListener('click', () => { close(); });
     });
   },
 
