@@ -133,6 +133,11 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); font-weight: 700; lin
 /* Sidebar overlay (mobile) */
 .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 199; }
 .sidebar-overlay.open { display: block; }
+/* No overlay on desktop — sidebar pushes content instead */
+@media (min-width: 769px) { .sidebar-overlay { display: none !important; } }
+@media (min-width: 769px) {
+  .sidebar-overlay { display: none !important; }
+}
 
 /* ---- MAIN CONTENT ---- */
 .main-content {
@@ -142,6 +147,11 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); font-weight: 700; lin
   flex-direction: column;
   min-height: 100vh;
   min-width: 0;
+  transition: margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+/* On desktop: push content right when sidebar opens */
+@media (min-width: 769px) {
+  body.sidebar-open .main-content { margin-left: var(--sidebar-width); }
 }
 
 /* ---- TOPBAR ---- */

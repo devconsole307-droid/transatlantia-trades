@@ -175,8 +175,16 @@ const UI = {
     const overlay   = document.getElementById('sidebarOverlay');
     if (!hamburger || !sidebar) return;
 
-    const open  = () => { sidebar.classList.add('open');    if (overlay) overlay.classList.add('open'); };
-    const close = () => { sidebar.classList.remove('open'); if (overlay) overlay.classList.remove('open'); };
+    const open  = () => {
+      sidebar.classList.add('open');
+      document.body.classList.add('sidebar-open');
+      if (overlay && window.innerWidth < 769) overlay.classList.add('open');
+    };
+    const close = () => {
+      sidebar.classList.remove('open');
+      document.body.classList.remove('sidebar-open');
+      if (overlay) overlay.classList.remove('open');
+    };
     const toggle = () => sidebar.classList.contains('open') ? close() : open();
 
     // Click to toggle
