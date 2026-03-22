@@ -179,18 +179,33 @@ const UI = {
     const close = () => { sidebar.classList.remove('open'); if (overlay) overlay.classList.remove('open'); };
     const toggle = () => sidebar.classList.contains('open') ? close() : open();
 
-    // Both click and touchend so mobile works instantly
+    // Click to toggle
     hamburger.addEventListener('click', toggle);
+    // Touch support for mobile
     hamburger.addEventListener('touchend', (e) => { e.preventDefault(); toggle(); }, { passive: false });
 
+    // Hover to open on desktop (mouseenter/mouseleave)
+    hamburger.addEventListener('mouseenter', () => { open(); });
+    // Keep open when mouse moves into sidebar
+    sidebar.addEventListener('mouseleave', (e) => {
+      // Only close if mouse didn't go back to hamburger
+      if (!hamburger.contains(e.relatedTarget)) close();
+    });
+    hamburger.addEventListener('mouseleave', (e) => {
+      // Only close if mouse didn't go into sidebar
+      if (!sidebar.contains(e.relatedTarget)) close();
+    });
+
+    // Close when overlay clicked (click outside)
     if (overlay) {
       overlay.addEventListener('click', close);
       overlay.addEventListener('touchend', (e) => { e.preventDefault(); close(); }, { passive: false });
     }
 
-    // Close when nav link tapped on mobile
+    // Auto-close when any nav link is clicked
     sidebar.querySelectorAll('.sidebar-link').forEach(link => {
       link.addEventListener('click', () => { close(); });
+      link.addEventListener('touchend', () => { setTimeout(close, 150); });
     });
   },
 
