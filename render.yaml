@@ -34,6 +34,10 @@ services:
         value: 7d
       - key: SITE_NAME
         value: TransAtlantia Trades
+      - key: SITE_URL
+        value: https://transatlantia-trades-frontend.onrender.com
+      - key: FRONTEND_URL
+        value: https://transatlantia-trades-frontend.onrender.com
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -77,9 +81,6 @@ services:
       - type: rewrite
         source: /uploads/*
         destination: https://transatlantia-trades-backend.onrender.com/uploads/*
-      - type: rewrite
-        source: /*
-        destination: /index.html
 
 # ---- DATABASE ----
 databases:
